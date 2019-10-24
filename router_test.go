@@ -6,7 +6,7 @@ import (
 )
 
 func TestNewRouter(t *testing.T) {
-	var r = NewRouter()
+	var r = newRouterGroup()
 	r.GET("/", func(writer http.ResponseWriter, request *http.Request) {})
 	r.GET("/t1", func(writer http.ResponseWriter, request *http.Request) {})
 	r.GET("/t1/h1", func(writer http.ResponseWriter, request *http.Request) {})

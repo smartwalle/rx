@@ -6,9 +6,9 @@ type Tree struct {
 	root *Node
 }
 
-func NewTree() *Tree {
+func newTree() *Tree {
 	var t = &Tree{}
-	t.root = NewNode("/", 1)
+	t.root = newNode("/", 1)
 	return t
 }
 
@@ -23,7 +23,7 @@ func (this *Tree) Add(path string, handlers ...http.HandlerFunc) {
 		for _, name := range paths {
 			var node = currentNode.children[name]
 			if node == nil {
-				node = NewNode(name, currentNode.depth+1)
+				node = newNode(name, currentNode.depth+1)
 				currentNode.children[name] = node
 			}
 			currentNode = node

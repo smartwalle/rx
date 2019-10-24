@@ -13,7 +13,7 @@ type Node struct {
 	handlers []http.HandlerFunc
 }
 
-func NewNode(name string, depth int) *Node {
+func newNode(name string, depth int) *Node {
 	var n = &Node{}
 	n.name = name
 	n.depth = depth

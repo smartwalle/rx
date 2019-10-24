@@ -1,6 +1,7 @@
 package rx
 
 import (
+	"path"
 	"strings"
 )
 
@@ -33,4 +34,17 @@ func lastChar(str string) uint8 {
 func fistChar(str string) uint8 {
 	asset(str != "", "the length of the string can't be 0")
 	return str[0]
+}
+
+func joinPaths(absolutePath, relativePath string) string {
+	if relativePath == "" {
+		return absolutePath
+	}
+
+	finalPath := path.Join(absolutePath, relativePath)
+	appendSlash := lastChar(relativePath) == '/' && lastChar(finalPath) != '/'
+	if appendSlash {
+		return finalPath + "/"
+	}
+	return finalPath
 }

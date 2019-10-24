@@ -6,7 +6,7 @@ import (
 )
 
 func TestTree_FindOne(t *testing.T) {
-	var tree = NewTree()
+	var tree = newTree()
 	tree.Add("/", func(writer http.ResponseWriter, request *http.Request) {})
 	tree.Add("/t1", func(writer http.ResponseWriter, request *http.Request) {})
 	tree.Add("/t1/h1", func(writer http.ResponseWriter, request *http.Request) {})
@@ -55,7 +55,7 @@ func TestTree_FindOne(t *testing.T) {
 }
 
 func TestTree_Find(t *testing.T) {
-	var tree = NewTree()
+	var tree = newTree()
 	tree.Add("/", func(writer http.ResponseWriter, request *http.Request) {})
 	tree.Add("/t1", func(writer http.ResponseWriter, request *http.Request) {})
 	tree.Add("/t1/h1", func(writer http.ResponseWriter, request *http.Request) {})
