@@ -1,7 +1,5 @@
 package rx
 
-import "net/http"
-
 type Tree struct {
 	root *Node
 }
@@ -16,7 +14,7 @@ func (this *Tree) Print() {
 	this.root.Print()
 }
 
-func (this *Tree) Add(path string, handlers ...http.HandlerFunc) {
+func (this *Tree) Add(path string, handlers ...HandlerFunc) {
 	var currentNode = this.root
 	if currentNode.name != path {
 		var paths = splitPath(path)

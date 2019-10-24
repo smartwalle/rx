@@ -7,13 +7,13 @@ import (
 
 func TestNewRouter(t *testing.T) {
 	var r = newRouterGroup()
-	r.GET("/", func(writer http.ResponseWriter, request *http.Request) {})
-	r.GET("/t1", func(writer http.ResponseWriter, request *http.Request) {})
-	r.GET("/t1/h1", func(writer http.ResponseWriter, request *http.Request) {})
-	r.GET("/t1/h2", func(writer http.ResponseWriter, request *http.Request) {})
-	r.GET("/t2/h1", func(writer http.ResponseWriter, request *http.Request) {})
-	r.GET("/t2/h2", func(writer http.ResponseWriter, request *http.Request) {})
-	r.GET("/t4/", func(writer http.ResponseWriter, request *http.Request) {})
+	r.GET("/", func(c *Context) {})
+	r.GET("/t1", func(c *Context) {})
+	r.GET("/t1/h1", func(c *Context) {})
+	r.GET("/t1/h2", func(c *Context) {})
+	r.GET("/t2/h1", func(c *Context) {})
+	r.GET("/t2/h2", func(c *Context) {})
+	r.GET("/t4/", func(c *Context) {})
 
 	var tests = []struct {
 		m string

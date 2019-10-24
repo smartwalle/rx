@@ -30,9 +30,8 @@ func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if len(nodes) > 0 {
 		var node = nodes[0]
 		if node.path == path && len(node.handlers) > 0 {
-			for _, handler := range node.handlers {
-				handler(w, req)
-			}
+			this.handle(node, w, req)
+			return
 		}
 	} else {
 		// TODO regex
@@ -41,4 +40,13 @@ func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	fmt.Println("bad request")
 
 	// TODO bad request
+}
+
+func (this *Engine) handle(node *Node, w http.ResponseWriter, req *http.Request) {
+	var c = &Context{}
+	c.reset()
+	c.Request = req
+	c.Writer = w
+	c.handlers = node.handlers
+	c.Next()
 }

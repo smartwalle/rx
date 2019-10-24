@@ -7,23 +7,23 @@ import (
 
 func main() {
 	var s = rx.New()
-	s.GET("/", func(writer http.ResponseWriter, request *http.Request) {
-		writer.Write([]byte(request.URL.Path))
+	s.GET("/", func(c *rx.Context) {
+		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
-	s.GET("/t1", func(writer http.ResponseWriter, request *http.Request) {
-		writer.Write([]byte(request.URL.Path))
+	s.GET("/t1", func(c *rx.Context) {
+		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
-	s.GET("/t1/h1", func(writer http.ResponseWriter, request *http.Request) {
-		writer.Write([]byte(request.URL.Path))
+	s.GET("/t1/h1", func(c *rx.Context) {
+		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
-	s.GET("/t1/h2", func(writer http.ResponseWriter, request *http.Request) {
-		writer.Write([]byte(request.URL.Path))
+	s.GET("/t1/h2", func(c *rx.Context) {
+		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
-	s.GET("/t2/h1", func(writer http.ResponseWriter, request *http.Request) {
-		writer.Write([]byte(request.URL.Path))
+	s.GET("/t2/h1", func(c *rx.Context) {
+		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
-	s.GET("/t2/h2", func(writer http.ResponseWriter, request *http.Request) {
-		writer.Write([]byte(request.URL.Path))
+	s.GET("/t2/h2", func(c *rx.Context) {
+		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
 
 	s.Print()

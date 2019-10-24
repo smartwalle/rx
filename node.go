@@ -2,7 +2,6 @@ package rx
 
 import (
 	"fmt"
-	"net/http"
 )
 
 type Node struct {
@@ -10,7 +9,7 @@ type Node struct {
 	path     string
 	depth    int
 	children map[string]*Node
-	handlers []http.HandlerFunc
+	handlers []HandlerFunc
 }
 
 func newNode(name string, depth int) *Node {

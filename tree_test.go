@@ -7,13 +7,13 @@ import (
 
 func TestTree_FindOne(t *testing.T) {
 	var tree = newTree()
-	tree.Add("/", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t1", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t1/h1", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t1/h2", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t2/h1", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t2/h2", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t4", func(writer http.ResponseWriter, request *http.Request) {})
+	tree.Add("/", func(c *Context) {})
+	tree.Add("/t1", func(c *Context) {})
+	tree.Add("/t1/h1", func(c *Context) {})
+	tree.Add("/t1/h2", func(c *Context) {})
+	tree.Add("/t2/h1", func(c *Context) {})
+	tree.Add("/t2/h2", func(c *Context) {})
+	tree.Add("/t4", func(c *Context) {})
 
 	tree.Print()
 
@@ -56,13 +56,13 @@ func TestTree_FindOne(t *testing.T) {
 
 func TestTree_Find(t *testing.T) {
 	var tree = newTree()
-	tree.Add("/", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t1", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t1/h1", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t1/h2", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t2/h1", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t2/h2", func(writer http.ResponseWriter, request *http.Request) {})
-	tree.Add("/t4", func(writer http.ResponseWriter, request *http.Request) {})
+	tree.Add("/", func(c *Context) {})
+	tree.Add("/t1", func(c *Context) {})
+	tree.Add("/t1/h1", func(c *Context) {})
+	tree.Add("/t1/h2", func(c *Context) {})
+	tree.Add("/t2/h1", func(c *Context) {})
+	tree.Add("/t2/h2", func(c *Context) {})
+	tree.Add("/t4", func(c *Context) {})
 
 	tree.Print()
 

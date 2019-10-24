@@ -6,17 +6,17 @@ import (
 )
 
 type Router interface {
-	Use(handlers ...http.HandlerFunc) Router
+	Use(handlers ...HandlerFunc) Router
 
-	Group(path string, handlers ...http.HandlerFunc) Router
+	Group(path string, handlers ...HandlerFunc) Router
 
-	GET(path string, handlers ...http.HandlerFunc)
+	GET(path string, handlers ...HandlerFunc)
 }
 
 type RouterGroup struct {
 	trees    map[string]*Tree
 	basePath string
-	handlers []http.HandlerFunc
+	handlers []HandlerFunc
 	engine   *Engine
 	isRoot   bool
 }
@@ -56,12 +56,12 @@ func (this *RouterGroup) findOne(method, path string) *Node {
 	return tree.FindOne(path)
 }
 
-func (this *RouterGroup) Use(handlers ...http.HandlerFunc) Router {
+func (this *RouterGroup) Use(handlers ...HandlerFunc) Router {
 	this.handlers = append(this.handlers, handlers...)
 	return this.returnObj()
 }
 
-func (this *RouterGroup) Group(path string, handlers ...http.HandlerFunc) Router {
+func (this *RouterGroup) Group(path string, handlers ...HandlerFunc) Router {
 	var r = newRouterGroup()
 	r.trees = this.trees
 	r.basePath = cleanPath(joinPaths(this.basePath, path))
@@ -69,11 +69,11 @@ func (this *RouterGroup) Group(path string, handlers ...http.HandlerFunc) Router
 	return r
 }
 
-func (this *RouterGroup) GET(path string, handlers ...http.HandlerFunc) {
+func (this *RouterGroup) GET(path string, handlers ...HandlerFunc) {
 	this.Handle(http.MethodGet, path, handlers...)
 }
 
-func (this *RouterGroup) Handle(method, path string, handlers ...http.HandlerFunc) {
+func (this *RouterGroup) Handle(method, path string, handlers ...HandlerFunc) {
 	path = cleanPath(joinPaths(this.basePath, path))
 
 	asset(method != "", "HTTP method can not be empty")
@@ -92,12 +92,12 @@ func (this *RouterGroup) Handle(method, path string, handlers ...http.HandlerFun
 	tree.Add(path, nHandlers...)
 }
 
-func (this *RouterGroup) combineHandlers(handlers []http.HandlerFunc) []http.HandlerFunc {
+func (this *RouterGroup) combineHandlers(handlers []HandlerFunc) []HandlerFunc {
 	if len(this.handlers) == 0 && len(handlers) == 0 {
 		return nil
 	}
 
-	var nHandlers = make([]http.HandlerFunc, len(this.handlers)+len(handlers))
+	var nHandlers = make([]HandlerFunc, len(this.handlers)+len(handlers))
 	if len(this.handlers) > 0 {
 		copy(nHandlers, this.handlers)
 	}
