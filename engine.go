@@ -39,7 +39,7 @@ func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	fmt.Println("bad request")
 
-	// TODO bad request
+	// TODO not found
 }
 
 func (this *Engine) handle(node *Node, w http.ResponseWriter, req *http.Request) {

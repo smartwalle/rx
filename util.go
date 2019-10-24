@@ -19,11 +19,15 @@ func splitPath(path string) []string {
 	return ps
 }
 
-func cleanPath(path string) string {
-	if len(path) > 1 && lastChar(path) == '/' {
-		return strings.TrimSuffix(path, "/")
+func cleanPath(p string) string {
+	if p == "" {
+		return "/"
 	}
-	return path
+	if p[0] != '/' {
+		p = "/" + p
+	}
+	p = path.Clean(p)
+	return p
 }
 
 func lastChar(str string) uint8 {
