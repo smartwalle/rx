@@ -13,7 +13,7 @@ func asset(guard bool, text string) {
 
 func splitPath(path string) []string {
 	var ps = strings.Split(path, "/")
-	if fistChar(path) == '/' {
+	if firstChar(path) == '/' {
 		return ps[1:]
 	}
 	return ps
@@ -35,7 +35,7 @@ func lastChar(str string) uint8 {
 	return str[len(str)-1]
 }
 
-func fistChar(str string) uint8 {
+func firstChar(str string) uint8 {
 	asset(str != "", "the length of the string can't be 0")
 	return str[0]
 }

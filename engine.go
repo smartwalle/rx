@@ -31,15 +31,19 @@ func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var nodes = tree.Find(path, false)
+	var nodes = tree.find(path, false)
 	if len(nodes) > 0 {
 		var node = nodes[0]
-		if node.path == path && len(node.handlers) > 0 {
-			this.handle(node, w, req)
+		if ok := this.handle(node, path, w, req); ok {
 			return
 		}
 	} else {
-		// TODO regex
+		nodes = tree.find(path, true)
+		for _, node := range nodes {
+			if ok := this.handle(node, path, w, req); ok {
+				return
+			}
+		}
 	}
 
 	fmt.Println("bad request")
@@ -47,12 +51,23 @@ func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// TODO not found
 }
 
-func (this *Engine) handle(node *Node, w http.ResponseWriter, req *http.Request) {
+func (this *Engine) handle(node *Node, path string, w http.ResponseWriter, req *http.Request) bool {
+	if len(node.handlers) > 0 {
+		if params, ok := node.match(path); ok {
+			this.exec(w, req, node.handlers, params)
+			return true
+		}
+	}
+	return false
+}
+
+func (this *Engine) exec(w http.ResponseWriter, req *http.Request, handlers []HandlerFunc, params Params) {
 	var c = this.pool.Get().(*Context)
 	c.reset()
 	c.Request = req
 	c.Writer = w
-	c.handlers = node.handlers
+	c.handlers = handlers
+	c.params = params
 	c.Next()
 	this.pool.Put(c)
 }

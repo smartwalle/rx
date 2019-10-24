@@ -16,23 +16,21 @@ func (this *Tree) Print() {
 
 func (this *Tree) Add(path string, handlers ...HandlerFunc) {
 	var currentNode = this.root
-	if currentNode.name != path {
+	if currentNode.key != path {
 		var paths = splitPath(path)
-		for _, name := range paths {
-			var node = currentNode.children[name]
+		for _, key := range paths {
+			var node = currentNode.children[key]
 			if node == nil {
-				node = newNode(name, currentNode.depth+1)
-				currentNode.children[name] = node
+				node = newNode(key, currentNode.depth+1)
+				currentNode.children[key] = node
 			}
 			currentNode = node
 		}
 	}
-	currentNode.path = path
-	currentNode.isPath = true
-	currentNode.handlers = handlers
+	currentNode.prepare(path, handlers...)
 }
 
-func (this *Tree) Find(path string, isRegex bool) (nodes []*Node) {
+func (this *Tree) find(path string, isRegex bool) (nodes []*Node) {
 	var node = this.root
 
 	if node.path == path {
@@ -41,8 +39,8 @@ func (this *Tree) Find(path string, isRegex bool) (nodes []*Node) {
 	}
 
 	var paths = splitPath(path)
-	for _, name := range paths {
-		var child = node.children[name]
+	for _, key := range paths {
+		var child = node.children[key]
 		if child == nil {
 			if isRegex {
 				break

@@ -25,6 +25,11 @@ func main() {
 	})
 	user.GET("/list", func(c *rx.Context) {
 		fmt.Println("用户列表")
+		c.Writer.Write([]byte(c.Request.URL.Path))
+	})
+	user.GET("/detail", func(c *rx.Context) {
+		fmt.Println("用户详情")
+		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
 
 	s.Use(func(c *rx.Context) {
@@ -38,12 +43,14 @@ func main() {
 	})
 	order.GET("/list", func(c *rx.Context) {
 		fmt.Println("订单列表")
+		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
 	order.GET("/detail", func(c *rx.Context) {
 		fmt.Println("Group order 的第三个 middleware, 不会继续执行后续 handler")
 		c.Abort()
 	}, func(c *rx.Context) {
 		fmt.Println("订单详情")
+		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
 
 	http.ListenAndServe(":9986", s)

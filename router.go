@@ -42,7 +42,7 @@ func (this *RouterGroup) find(method, path string, isRegex bool) []*Node {
 		return nil
 	}
 
-	return tree.Find(path, isRegex)
+	return tree.find(path, isRegex)
 }
 
 func (this *RouterGroup) Use(handlers ...HandlerFunc) Router {

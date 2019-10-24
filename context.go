@@ -10,27 +10,37 @@ type Context struct {
 	Request  *http.Request
 	Writer   http.ResponseWriter
 	handlers []HandlerFunc
+	params   Params
 	index    int
 	abort    bool
 }
 
 func (this *Context) reset() {
-	this.index = -1
-	this.abort = false
-	this.handlers = nil
 	this.Request = nil
 	this.Writer = nil
+	this.handlers = nil
+	this.params = nil
+	this.index = -1
+	this.abort = false
 }
 
 func (this *Context) Next() {
 	this.index++
 	for !this.abort && this.index < len(this.handlers) {
-		var h = this.handlers[this.index]
-		h(this)
+		var handler = this.handlers[this.index]
+		handler(this)
 		this.index++
 	}
 }
 
 func (this *Context) Abort() {
 	this.abort = true
+}
+
+func (this *Context) Params() Params {
+	return this.params
+}
+
+func (this *Context) Param(key string) string {
+	return this.params[key]
 }
