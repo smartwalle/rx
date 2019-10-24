@@ -58,7 +58,7 @@ func (this *Tree) Find(path string, isRegex bool) (nodes []*Node) {
 		node = child
 	}
 
-	// isRegex 为 true 才会执行以下代码
+	// 基本上只有 isRegex 为 true 的时候才会执行以下代码
 	var queue = make([]*Node, 0, 1)
 	queue = append(queue, node)
 	// 将 queue 列表中满足条件的 Node 及其满足条件的子 Node 添加到 nodes 列表中
