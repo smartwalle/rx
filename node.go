@@ -7,6 +7,7 @@ import (
 type Node struct {
 	name     string
 	path     string
+	isPath   bool
 	depth    int
 	children map[string]*Node
 	handlers []HandlerFunc
@@ -21,7 +22,7 @@ func newNode(name string, depth int) *Node {
 }
 
 func (this *Node) String() string {
-	return fmt.Sprintf("Name:%s  Path:%s", this.name, this.path)
+	return fmt.Sprintf("{Name:%s Path:%s}", this.name, this.path)
 }
 
 func (this *Node) Print() {

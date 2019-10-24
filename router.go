@@ -45,17 +45,6 @@ func (this *RouterGroup) find(method, path string, isRegex bool) []*Node {
 	return tree.Find(path, isRegex)
 }
 
-func (this *RouterGroup) findOne(method, path string) *Node {
-	path = cleanPath(path)
-
-	var tree = this.trees[method]
-	if tree == nil {
-		return nil
-	}
-
-	return tree.FindOne(path)
-}
-
 func (this *RouterGroup) Use(handlers ...HandlerFunc) Router {
 	this.handlers = append(this.handlers, handlers...)
 	return this.returnObj()

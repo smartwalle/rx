@@ -28,6 +28,7 @@ func (this *Tree) Add(path string, handlers ...HandlerFunc) {
 		}
 	}
 	currentNode.path = path
+	currentNode.isPath = true
 	currentNode.handlers = handlers
 }
 
@@ -57,29 +58,22 @@ func (this *Tree) Find(path string, isRegex bool) (nodes []*Node) {
 		node = child
 	}
 
-	return nil
-}
-
-func (this *Tree) FindOne(path string) *Node {
-	var node = this.root
-
-	if node.path == path {
-		return node
+	// isRegex 为 true 才会执行以下代码
+	var queue = make([]*Node, 0, 1)
+	queue = append(queue, node)
+	// 将 queue 列表中满足条件的 Node 及其满足条件的子 Node 添加到 nodes 列表中
+	for len(queue) > 0 {
+		var temp []*Node
+		for _, qNode := range queue {
+			if qNode.isPath {
+				nodes = append(nodes, qNode)
+			}
+			for _, child := range qNode.children {
+				temp = append(temp, child)
+			}
+		}
+		queue = temp
 	}
 
-	var paths = splitPath(path)
-	for _, name := range paths {
-		var child = node.children[name]
-		if child == nil {
-			return nil
-		}
-
-		node = child
-
-		if child.path == path {
-			return node
-		}
-	}
-
-	return nil
+	return nodes
 }
