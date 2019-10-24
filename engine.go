@@ -3,10 +3,12 @@ package rx
 import (
 	"fmt"
 	"net/http"
+	"sync"
 )
 
 type Engine struct {
 	*RouterGroup
+	pool sync.Pool
 }
 
 func New() *Engine {
@@ -14,6 +16,9 @@ func New() *Engine {
 	e.RouterGroup = newRouterGroup()
 	e.RouterGroup.isRoot = true
 	e.RouterGroup.engine = e
+	e.pool.New = func() interface{} {
+		return &Context{}
+	}
 	return e
 }
 
@@ -43,10 +48,11 @@ func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (this *Engine) handle(node *Node, w http.ResponseWriter, req *http.Request) {
-	var c = &Context{}
+	var c = this.pool.Get().(*Context)
 	c.reset()
 	c.Request = req
 	c.Writer = w
 	c.handlers = node.handlers
 	c.Next()
+	this.pool.Put(c)
 }
