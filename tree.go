@@ -14,7 +14,7 @@ func (this *methodTree) Print() {
 	this.root.Print()
 }
 
-func (this *methodTree) add(path string, handlers ...HandlerFunc) {
+func (this *methodTree) add(path string, handlers HandlerChain) {
 	if path == "" {
 		return
 	}
@@ -31,7 +31,7 @@ func (this *methodTree) add(path string, handlers ...HandlerFunc) {
 			node = child
 		}
 	}
-	node.prepare(path, handlers...)
+	node.prepare(path, handlers)
 }
 
 func (this *methodTree) find(path string, isRegex bool) (nodes []*pathNode) {
@@ -84,6 +84,8 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*pathNode) {
 		}
 		queue = temp
 	}
+
+	// TODO 对 nodes 按添加顺序进行排序
 
 	return nodes
 }

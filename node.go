@@ -11,31 +11,31 @@ const (
 	wildcard2 = `([\S]+)`
 )
 
-type nodesChain map[string]*pathNode
+type pathNodes map[string]*pathNode
 
-func (this nodesChain) add(node *pathNode) {
+func (this pathNodes) add(node *pathNode) {
 	if node == nil {
 		return
 	}
 	this[node.key] = node
 }
 
-func (this nodesChain) get(key string) *pathNode {
+func (this pathNodes) get(key string) *pathNode {
 	return this[key]
 }
 
-func (this nodesChain) del(key string) {
+func (this pathNodes) del(key string) {
 	delete(this, key)
 }
 
 type pathNode struct {
 	key      string
 	depth    int
-	children nodesChain
+	children pathNodes
 
 	path     string
 	isPath   bool
-	handlers []HandlerFunc
+	handlers HandlerChain
 
 	regex      *regexp.Regexp
 	paramNames []string
@@ -45,7 +45,7 @@ func newPathNode(key string, depth int) *pathNode {
 	var n = &pathNode{}
 	n.key = key
 	n.depth = depth
-	n.children = make(nodesChain)
+	n.children = make(pathNodes)
 	return n
 }
 
@@ -69,7 +69,7 @@ func (this *pathNode) remove(key string) {
 	this.children.del(key)
 }
 
-func (this *pathNode) prepare(path string, handlers ...HandlerFunc) {
+func (this *pathNode) prepare(path string, handlers HandlerChain) {
 	this.path = path
 	this.isPath = true
 	this.handlers = handlers

@@ -4,12 +4,10 @@ import (
 	"net/http"
 )
 
-type HandlerFunc func(c *Context)
-
 type Context struct {
 	Request  *http.Request
 	Writer   http.ResponseWriter
-	handlers []HandlerFunc
+	handlers HandlerChain
 	params   Params
 	index    int
 	abort    bool

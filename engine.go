@@ -10,12 +10,27 @@ var (
 	default405Body = []byte("405 method not allowed")
 )
 
+type HandlerFunc func(c *Context)
+
+type HandlerChain []HandlerFunc
+
+func (this HandlerChain) Last() HandlerFunc {
+	if l := len(this); l > 0 {
+		return this[l-1]
+	}
+	return nil
+}
+
+func (this HandlerChain) Len() int {
+	return len(this)
+}
+
 type Engine struct {
 	*RouterGroup
 	pool sync.Pool
 
-	allNoRoute []HandlerFunc
-	noRoute    []HandlerFunc
+	allNoRoute HandlerChain
+	noRoute    HandlerChain
 }
 
 func New() *Engine {

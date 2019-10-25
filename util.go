@@ -2,6 +2,8 @@ package rx
 
 import (
 	"path"
+	"reflect"
+	"runtime"
 	"strings"
 )
 
@@ -51,4 +53,8 @@ func joinPaths(absolutePath, relativePath string) string {
 		return finalPath + "/"
 	}
 	return finalPath
+}
+
+func nameOfFunction(f interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }

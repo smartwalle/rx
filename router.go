@@ -1,6 +1,7 @@
 package rx
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -81,34 +82,34 @@ func (this *RouterGroup) Break(method, path string) {
 }
 
 func (this *RouterGroup) GET(path string, handlers ...HandlerFunc) {
-	this.Handle(http.MethodGet, path, handlers...)
+	this.handle(http.MethodGet, path, handlers)
 }
 
 func (this *RouterGroup) HEAD(path string, handlers ...HandlerFunc) {
-	this.Handle(http.MethodHead, path, handlers...)
+	this.handle(http.MethodHead, path, handlers)
 }
 
 func (this *RouterGroup) POST(path string, handlers ...HandlerFunc) {
-	this.Handle(http.MethodPost, path, handlers...)
+	this.handle(http.MethodPost, path, handlers)
 }
 
 func (this *RouterGroup) PUT(path string, handlers ...HandlerFunc) {
-	this.Handle(http.MethodPut, path, handlers...)
+	this.handle(http.MethodPut, path, handlers)
 }
 
 func (this *RouterGroup) PATCH(path string, handlers ...HandlerFunc) {
-	this.Handle(http.MethodPatch, path, handlers...)
+	this.handle(http.MethodPatch, path, handlers)
 }
 
 func (this *RouterGroup) DELETE(path string, handlers ...HandlerFunc) {
-	this.Handle(http.MethodDelete, path, handlers...)
+	this.handle(http.MethodDelete, path, handlers)
 }
 
 func (this *RouterGroup) OPTIONS(path string, handlers ...HandlerFunc) {
-	this.Handle(http.MethodOptions, path, handlers...)
+	this.handle(http.MethodOptions, path, handlers)
 }
 
-func (this *RouterGroup) Handle(method, path string, handlers ...HandlerFunc) {
+func (this *RouterGroup) handle(method, path string, handlers HandlerChain) {
 	path = cleanPath(joinPaths(this.basePath, path))
 
 	asset(method != "", "HTTP method can not be empty")
@@ -124,15 +125,17 @@ func (this *RouterGroup) Handle(method, path string, handlers ...HandlerFunc) {
 		tree = newMethodTree()
 		this.trees[method] = tree
 	}
-	tree.add(path, nHandlers...)
+	tree.add(path, nHandlers)
+
+	logger.Output(3, fmt.Sprintf("%-8s %-30s --> %s (%d handlers)\n", method, path, nameOfFunction(nHandlers.Last()), nHandlers.Len()))
 }
 
-func (this *RouterGroup) combineHandlers(handlers []HandlerFunc) []HandlerFunc {
+func (this *RouterGroup) combineHandlers(handlers HandlerChain) HandlerChain {
 	if len(this.handlers) == 0 && len(handlers) == 0 {
 		return nil
 	}
 
-	var nHandlers = make([]HandlerFunc, len(this.handlers)+len(handlers))
+	var nHandlers = make(HandlerChain, len(this.handlers)+len(handlers))
 	if len(this.handlers) > 0 {
 		copy(nHandlers, this.handlers)
 	}
