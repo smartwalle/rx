@@ -7,14 +7,17 @@ import (
 )
 
 func TestTree_Find(t *testing.T) {
+	var h = HandlerChain{}
+	h = append(h, func(c *Context) {})
+
 	var tree = newMethodTree()
-	tree.add("/", func(c *Context) {})
-	tree.add("/t1", func(c *Context) {})
-	tree.add("/t1/h1", func(c *Context) {})
-	tree.add("/t1/h2", func(c *Context) {})
-	tree.add("/t2/h1", func(c *Context) {})
-	tree.add("/t2/h2", func(c *Context) {})
-	tree.add("/t4", func(c *Context) {})
+	tree.add("/", h)
+	tree.add("/t1", h)
+	tree.add("/t1/h1", h)
+	tree.add("/t1/h2", h)
+	tree.add("/t2/h1", h)
+	tree.add("/t2/h2", h)
+	tree.add("/t4", h)
 
 	tree.Print()
 
@@ -49,14 +52,17 @@ func TestTree_Find(t *testing.T) {
 }
 
 func TestTree_Clean(t *testing.T) {
+	var h = HandlerChain{}
+	h = append(h, func(c *Context) {})
+
 	var tree = newMethodTree()
-	tree.add("/", func(c *Context) {})
-	tree.add("/t1", func(c *Context) {})
-	tree.add("/t1/h1", func(c *Context) {})
-	tree.add("/t1/h2", func(c *Context) {})
-	tree.add("/t2/h1", func(c *Context) {})
-	tree.add("/t2/h2", func(c *Context) {})
-	tree.add("/t4", func(c *Context) {})
+	tree.add("/", h)
+	tree.add("/t1", h)
+	tree.add("/t1/h1", h)
+	tree.add("/t1/h2", h)
+	tree.add("/t2/h1", h)
+	tree.add("/t2/h2", h)
+	tree.add("/t4", h)
 
 	tree.Print()
 
