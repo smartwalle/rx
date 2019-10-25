@@ -11,10 +11,27 @@ const (
 	wildcard2 = `([\S]+)`
 )
 
+type nodesChain map[string]*pathNode
+
+func (this nodesChain) add(node *pathNode) {
+	if node == nil {
+		return
+	}
+	this[node.key] = node
+}
+
+func (this nodesChain) get(key string) *pathNode {
+	return this[key]
+}
+
+func (this nodesChain) del(key string) {
+	delete(this, key)
+}
+
 type pathNode struct {
 	key      string
 	depth    int
-	children map[string]*pathNode
+	children nodesChain
 
 	path     string
 	isPath   bool
@@ -28,7 +45,7 @@ func newPathNode(key string, depth int) *pathNode {
 	var n = &pathNode{}
 	n.key = key
 	n.depth = depth
-	n.children = make(map[string]*pathNode)
+	n.children = make(nodesChain)
 	return n
 }
 
@@ -41,15 +58,15 @@ func (this *pathNode) reset() {
 }
 
 func (this *pathNode) add(node *pathNode) {
-	this.children[node.key] = node
+	this.children.add(node)
 }
 
 func (this *pathNode) get(key string) *pathNode {
-	return this.children[key]
+	return this.children.get(key)
 }
 
 func (this *pathNode) remove(key string) {
-	delete(this.children, key)
+	this.children.del(key)
 }
 
 func (this *pathNode) prepare(path string, handlers ...HandlerFunc) {
