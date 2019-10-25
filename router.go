@@ -8,7 +8,7 @@ import (
 type Router interface {
 	Use(handlers ...HandlerFunc) Router
 
-	Group(path string, handlers ...HandlerFunc) Router
+	Group(path string, handlers ...HandlerFunc) *RouterGroup
 
 	GET(path string, handlers ...HandlerFunc)
 
@@ -26,10 +26,10 @@ type Router interface {
 }
 
 type RouterGroup struct {
+	engine   *Engine
 	trees    map[string]*methodTree
 	basePath string
 	handlers []HandlerFunc
-	engine   *Engine
 	isRoot   bool
 }
 
@@ -62,13 +62,22 @@ func (this *RouterGroup) Use(handlers ...HandlerFunc) Router {
 	return this.returnObj()
 }
 
-func (this *RouterGroup) Group(path string, handlers ...HandlerFunc) Router {
+func (this *RouterGroup) Group(path string, handlers ...HandlerFunc) *RouterGroup {
 	var r = newRouterGroup()
 	r.engine = this.engine
 	r.trees = this.trees
 	r.basePath = cleanPath(joinPaths(this.basePath, path))
 	r.handlers = this.combineHandlers(handlers)
 	return r
+}
+
+func (this *RouterGroup) Break(method, path string) {
+	var tree = this.trees[method]
+	if tree != nil {
+		asset(path[0] == '/', "path must begin with '/'")
+		path = cleanPath(path)
+		tree.clean(path)
+	}
 }
 
 func (this *RouterGroup) GET(path string, handlers ...HandlerFunc) {

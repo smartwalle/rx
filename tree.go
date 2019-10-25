@@ -19,19 +19,19 @@ func (this *methodTree) add(path string, handlers ...HandlerFunc) {
 		return
 	}
 
-	var currentNode = this.root
-	if currentNode.key != path {
+	var node = this.root
+	if node.key != path {
 		var paths = splitPath(path)
 		for _, key := range paths {
-			var node = currentNode.children[key]
-			if node == nil {
-				node = newPathNode(key, currentNode.depth+1)
-				currentNode.children[key] = node
+			var child = node.get(key)
+			if child == nil {
+				child = newPathNode(key, node.depth+1)
+				node.add(child)
 			}
-			currentNode = node
+			node = child
 		}
 	}
-	currentNode.prepare(path, handlers...)
+	node.prepare(path, handlers...)
 }
 
 func (this *methodTree) find(path string, isRegex bool) (nodes []*pathNode) {
@@ -48,7 +48,7 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*pathNode) {
 
 	var paths = splitPath(path)
 	for _, key := range paths {
-		var child = node.children[key]
+		var child = node.get(key)
 		if child == nil {
 			if isRegex {
 				break
@@ -86,4 +86,46 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*pathNode) {
 	}
 
 	return nodes
+}
+
+func (this *methodTree) clean(path string) {
+	if path == "" {
+		return
+	}
+
+	var node = this.root
+	var nodes = make([]*pathNode, 1, 1)
+	nodes[0] = node
+
+	if node.path != path {
+		var paths = splitPath(path)
+		for _, key := range paths {
+			var child = node.get(key)
+			if child == nil {
+				return
+			}
+
+			node = child
+			nodes = append(nodes, child)
+
+			if child.path == path {
+				break
+			}
+		}
+	}
+
+	if node != nil {
+		node.reset()
+		var nodeLen = len(nodes)
+		for i := nodeLen - 1; i >= 0; i-- {
+			var child = nodes[i]
+			if child.isPath {
+				return
+			}
+			if len(child.children) == 0 && i != 0 {
+				var parent = nodes[i-1]
+				parent.remove(child.key)
+			}
+		}
+	}
 }

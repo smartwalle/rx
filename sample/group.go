@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/smartwalle/rx"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -42,6 +43,7 @@ func main() {
 		fmt.Println("Group order 的第二个 middleware")
 	})
 	order.GET("/list", func(c *rx.Context) {
+		time.Sleep(time.Second * 10)
 		fmt.Println("订单列表")
 		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
@@ -50,6 +52,10 @@ func main() {
 		c.Abort()
 	}, func(c *rx.Context) {
 		fmt.Println("订单详情")
+		c.Writer.Write([]byte(c.Request.URL.Path))
+	})
+	order.GET("/detail/:id", func(c *rx.Context) {
+		fmt.Println("订单详情x")
 		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
 

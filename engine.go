@@ -34,13 +34,13 @@ func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	var nodes = tree.find(path, false)
 	if len(nodes) > 0 {
 		var node = nodes[0]
-		if ok := this.handleHttpRequest(node, path, w, req); ok {
+		if ok := this.handleRequest(node, path, w, req); ok {
 			return
 		}
 	} else {
 		nodes = tree.find(path, true)
 		for _, node := range nodes {
-			if ok := this.handleHttpRequest(node, path, w, req); ok {
+			if ok := this.handleRequest(node, path, w, req); ok {
 				return
 			}
 		}
@@ -51,7 +51,7 @@ func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// TODO not found
 }
 
-func (this *Engine) handleHttpRequest(node *pathNode, path string, w http.ResponseWriter, req *http.Request) bool {
+func (this *Engine) handleRequest(node *pathNode, path string, w http.ResponseWriter, req *http.Request) bool {
 	if len(node.handlers) > 0 {
 		if params, ok := node.match(path); ok {
 			var c = this.pool.Get().(*Context)

@@ -7,15 +7,20 @@ import (
 )
 
 const (
-	defaultWildcard = `([\w]+)`
+	defaultWildcard = `([^\s/]+)`
 )
+
+//([\w]+)
+//(?P<value>.*)
+//([\S]+)
 
 type pathNode struct {
 	key      string
-	path     string
-	isPath   bool
 	depth    int
 	children map[string]*pathNode
+
+	path     string
+	isPath   bool
 	handlers []HandlerFunc
 
 	regex      *regexp.Regexp
@@ -30,9 +35,29 @@ func newPathNode(key string, depth int) *pathNode {
 	return n
 }
 
+func (this *pathNode) reset() {
+	this.path = ""
+	this.isPath = false
+	this.handlers = nil
+	this.regex = nil
+	this.paramNames = nil
+}
+
+func (this *pathNode) add(node *pathNode) {
+	this.children[node.key] = node
+}
+
+func (this *pathNode) get(key string) *pathNode {
+	return this.children[key]
+}
+
+func (this *pathNode) remove(key string) {
+	delete(this.children, key)
+}
+
 func (this *pathNode) prepare(path string, handlers ...HandlerFunc) {
-	this.isPath = true
 	this.path = path
+	this.isPath = true
 	this.handlers = handlers
 
 	var paths = splitPath(path)
@@ -77,6 +102,7 @@ func (this *pathNode) match(path string) (Params, bool) {
 
 func (this *pathNode) matchWithRegex(path string) (Params, bool) {
 	var mResult = this.regex.FindStringSubmatch(path)
+	fmt.Println(mResult, path, this.path, this.regex)
 	if len(mResult) == 0 {
 		return nil, false
 	}
