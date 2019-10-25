@@ -42,5 +42,8 @@ func (this *Context) Params() Params {
 }
 
 func (this *Context) Param(key string) string {
+	if this.params == nil {
+		return ""
+	}
 	return this.params[key]
 }
