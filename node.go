@@ -107,7 +107,6 @@ func (this *pathNode) match(path string) (Params, bool) {
 
 func (this *pathNode) matchWithRegex(path string) (Params, bool) {
 	var mResult = this.regex.FindStringSubmatch(path)
-	fmt.Println(mResult, path, this.path, this.regex)
 	if len(mResult) == 0 {
 		return nil, false
 	}

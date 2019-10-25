@@ -7,55 +7,45 @@ import (
 )
 
 func main() {
-
 	var s = rx.New()
-
 	s.Use(func(c *rx.Context) {
-		fmt.Println("第一个 middleware")
+		fmt.Fprintln(c.Writer, "global m1")
 	})
 	s.Use(func(c *rx.Context) {
-		fmt.Println("第二个 middleware")
+		fmt.Fprintln(c.Writer, "global m2")
+	})
+	s.NoRoute(func(c *rx.Context) {
+		fmt.Fprintln(c.Writer, "not found")
 	})
 
+	// user
 	var user = s.Group("/user", func(c *rx.Context) {
-		fmt.Println("Group user 的第一个 middleware")
+		fmt.Fprintln(c.Writer, "user m1")
 	})
 	user.Use(func(c *rx.Context) {
-		fmt.Println("Group user 的第二个 middleware")
+		fmt.Fprintln(c.Writer, "user m2")
 	})
 	user.GET("/list", func(c *rx.Context) {
-		fmt.Println("用户列表")
-		c.Writer.Write([]byte(c.Request.URL.Path))
+		fmt.Fprintln(c.Writer, "user list")
 	})
 	user.GET("/detail", func(c *rx.Context) {
-		fmt.Println("用户详情")
-		c.Writer.Write([]byte(c.Request.URL.Path))
+		fmt.Fprintln(c.Writer, "user detail")
 	})
 
-	s.Use(func(c *rx.Context) {
-		fmt.Println("第三个 middleware")
-	})
-	var order = s.Group("/order", func(c *rx.Context) {
-		fmt.Println("Group order 的第一个 middleware")
-	})
+	// order
+	var order = s.Group("/order")
 	order.Use(func(c *rx.Context) {
-		fmt.Println("Group order 的第二个 middleware")
+		fmt.Fprintln(c.Writer, "order m1")
+	}, func(c *rx.Context) {
+		fmt.Fprintln(c.Writer, "order m2")
 	})
 	order.GET("/list", func(c *rx.Context) {
-		fmt.Println("订单列表")
-		c.Writer.Write([]byte(c.Request.URL.Path))
+		fmt.Fprintln(c.Writer, "order list")
 	})
-	order.GET("/detail", func(c *rx.Context) {
-		fmt.Println("Group order 的第三个 middleware, 不会继续执行后续 handler")
-		c.Abort()
-	}, func(c *rx.Context) {
-		fmt.Println("订单详情")
-		c.Writer.Write([]byte(c.Request.URL.Path))
-	})
-	order.GET("/detail/:id", func(c *rx.Context) {
-		fmt.Println("订单详情x")
-		c.Writer.Write([]byte(c.Request.URL.Path))
+	order.GET("/:id", func(c *rx.Context) {
+		fmt.Fprintln(c.Writer, "order detail")
+		fmt.Fprintln(c.Writer, "order id", c.Param("id"))
 	})
 
-	http.ListenAndServe(":9986", s)
+	http.ListenAndServe(":8892", s)
 }
