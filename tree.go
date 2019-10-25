@@ -14,7 +14,11 @@ func (this *methodTree) Print() {
 	this.root.Print()
 }
 
-func (this *methodTree) Add(path string, handlers ...HandlerFunc) {
+func (this *methodTree) add(path string, handlers ...HandlerFunc) {
+	if path == "" {
+		return
+	}
+
 	var currentNode = this.root
 	if currentNode.key != path {
 		var paths = splitPath(path)
@@ -31,6 +35,10 @@ func (this *methodTree) Add(path string, handlers ...HandlerFunc) {
 }
 
 func (this *methodTree) find(path string, isRegex bool) (nodes []*pathNode) {
+	if path == "" {
+		return nil
+	}
+
 	var node = this.root
 
 	if node.path == path {
@@ -56,7 +64,11 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*pathNode) {
 		node = child
 	}
 
-	// 基本上只有 isRegex 为 true 的时候才会执行以下代码
+	if !isRegex {
+		return nil
+	}
+
+	// 只有 isRegex 为 true 的时候才会执行以下代码
 	var queue = make([]*pathNode, 0, 1)
 	queue = append(queue, node)
 	// 将 queue 列表中满足条件的 pathNode 及其满足条件的子 pathNode 添加到 nodes 列表中

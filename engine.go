@@ -25,7 +25,7 @@ func New() *Engine {
 func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	var path = cleanPath(req.URL.Path)
 
-	var tree = this.RouterGroup.methodTrees[req.Method]
+	var tree = this.RouterGroup.trees[req.Method]
 	if tree == nil {
 		// TODO method not allowed
 		return

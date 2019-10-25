@@ -14,22 +14,22 @@ type Router interface {
 }
 
 type RouterGroup struct {
-	methodTrees map[string]*methodTree
-	basePath    string
-	handlers    []HandlerFunc
-	engine      *Engine
-	isRoot      bool
+	trees    map[string]*methodTree
+	basePath string
+	handlers []HandlerFunc
+	engine   *Engine
+	isRoot   bool
 }
 
 func newRouterGroup() *RouterGroup {
 	var r = &RouterGroup{}
-	r.methodTrees = make(map[string]*methodTree)
+	r.trees = make(map[string]*methodTree)
 	r.basePath = "/"
 	return r
 }
 
 func (this *RouterGroup) Print() {
-	for _, t := range this.methodTrees {
+	for _, t := range this.trees {
 		t.Print()
 	}
 }
@@ -37,7 +37,7 @@ func (this *RouterGroup) Print() {
 func (this *RouterGroup) find(method, path string, isRegex bool) []*pathNode {
 	path = cleanPath(path)
 
-	var tree = this.methodTrees[method]
+	var tree = this.trees[method]
 	if tree == nil {
 		return nil
 	}
@@ -53,7 +53,7 @@ func (this *RouterGroup) Use(handlers ...HandlerFunc) Router {
 func (this *RouterGroup) Group(path string, handlers ...HandlerFunc) Router {
 	var r = newRouterGroup()
 	r.engine = this.engine
-	r.methodTrees = this.methodTrees
+	r.trees = this.trees
 	r.basePath = cleanPath(joinPaths(this.basePath, path))
 	r.handlers = this.combineHandlers(handlers)
 	return r
@@ -74,12 +74,12 @@ func (this *RouterGroup) Handle(method, path string, handlers ...HandlerFunc) {
 
 	var nHandlers = this.combineHandlers(handlers)
 
-	var tree = this.methodTrees[method]
+	var tree = this.trees[method]
 	if tree == nil {
 		tree = newMethodTree()
-		this.methodTrees[method] = tree
+		this.trees[method] = tree
 	}
-	tree.Add(path, nHandlers...)
+	tree.add(path, nHandlers...)
 }
 
 func (this *RouterGroup) combineHandlers(handlers []HandlerFunc) []HandlerFunc {

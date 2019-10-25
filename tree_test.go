@@ -7,13 +7,13 @@ import (
 
 func TestTree_Find(t *testing.T) {
 	var tree = newMethodTree()
-	tree.Add("/", func(c *Context) {})
-	tree.Add("/t1", func(c *Context) {})
-	tree.Add("/t1/h1", func(c *Context) {})
-	tree.Add("/t1/h2", func(c *Context) {})
-	tree.Add("/t2/h1", func(c *Context) {})
-	tree.Add("/t2/h2", func(c *Context) {})
-	tree.Add("/t4", func(c *Context) {})
+	tree.add("/", func(c *Context) {})
+	tree.add("/t1", func(c *Context) {})
+	tree.add("/t1/h1", func(c *Context) {})
+	tree.add("/t1/h2", func(c *Context) {})
+	tree.add("/t2/h1", func(c *Context) {})
+	tree.add("/t2/h2", func(c *Context) {})
+	tree.add("/t4", func(c *Context) {})
 
 	tree.Print()
 
@@ -30,14 +30,14 @@ func TestTree_Find(t *testing.T) {
 		{m: http.MethodGet, p: "/t2/h2", c: 1},
 		{m: http.MethodGet, p: "/t4", c: 1},
 
+		{m: http.MethodGet, p: "", c: 0},
 		{m: http.MethodGet, p: "//", c: 0},
 		{m: http.MethodGet, p: "/t1/", c: 0},
+		{m: http.MethodGet, p: "/t2", c: 0},
 		{m: http.MethodGet, p: "/t11", c: 0},
 		{m: http.MethodGet, p: "/t3", c: 0},
 		{m: http.MethodGet, p: "/t3/h1", c: 0},
 		{m: http.MethodGet, p: "/t3/h1/", c: 0},
-
-		{m: http.MethodGet, p: "/t2", c: 2},
 	}
 
 	for _, test := range tests {
