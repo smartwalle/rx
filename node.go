@@ -7,30 +7,30 @@ import (
 )
 
 const (
-	defaultWild = `([\w]+)`
+	defaultWildcard = `([\w]+)`
 )
 
-type Node struct {
+type pathNode struct {
 	key      string
 	path     string
 	isPath   bool
 	depth    int
-	children map[string]*Node
+	children map[string]*pathNode
 	handlers []HandlerFunc
 
 	regex      *regexp.Regexp
 	paramNames []string
 }
 
-func newNode(key string, depth int) *Node {
-	var n = &Node{}
+func newPathNode(key string, depth int) *pathNode {
+	var n = &pathNode{}
 	n.key = key
 	n.depth = depth
-	n.children = make(map[string]*Node)
+	n.children = make(map[string]*pathNode)
 	return n
 }
 
-func (this *Node) prepare(path string, handlers ...HandlerFunc) {
+func (this *pathNode) prepare(path string, handlers ...HandlerFunc) {
 	this.isPath = true
 	this.path = path
 	this.handlers = handlers
@@ -50,7 +50,7 @@ func (this *Node) prepare(path string, handlers ...HandlerFunc) {
 
 		if firstChar == ':' {
 			var name = p[1:strLen]
-			pattern = pattern + "/" + defaultWild
+			pattern = pattern + "/" + defaultWildcard
 			paramsNames = append(paramsNames, name)
 		} else if firstChar == '{' && lastChar == '}' {
 			var subStrList = strings.Split(p[1:strLen-1], ":")
@@ -65,7 +65,7 @@ func (this *Node) prepare(path string, handlers ...HandlerFunc) {
 	this.paramNames = paramsNames
 }
 
-func (this *Node) match(path string) (Params, bool) {
+func (this *pathNode) match(path string) (Params, bool) {
 	if this.regex != nil {
 		return this.matchWithRegex(path)
 	}
@@ -75,7 +75,7 @@ func (this *Node) match(path string) (Params, bool) {
 	return nil, false
 }
 
-func (this *Node) matchWithRegex(path string) (Params, bool) {
+func (this *pathNode) matchWithRegex(path string) (Params, bool) {
 	var mResult = this.regex.FindStringSubmatch(path)
 	if len(mResult) == 0 {
 		return nil, false
@@ -97,11 +97,11 @@ func (this *Node) matchWithRegex(path string) (Params, bool) {
 	return param, true
 }
 
-func (this *Node) String() string {
+func (this *pathNode) String() string {
 	return fmt.Sprintf("{Key:%s Path:%s}", this.key, this.path)
 }
 
-func (this *Node) Print() {
+func (this *pathNode) Print() {
 	for i := 0; i < this.depth; i++ {
 		fmt.Print("-")
 	}

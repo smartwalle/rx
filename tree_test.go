@@ -6,7 +6,7 @@ import (
 )
 
 func TestTree_Find(t *testing.T) {
-	var tree = newTree()
+	var tree = newMethodTree()
 	tree.Add("/", func(c *Context) {})
 	tree.Add("/t1", func(c *Context) {})
 	tree.Add("/t1/h1", func(c *Context) {})
