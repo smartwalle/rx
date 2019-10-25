@@ -15,9 +15,12 @@ type Context struct {
 	abort    bool
 }
 
-func (this *Context) reset() {
-	this.Request = nil
-	this.Writer = nil
+func (this *Context) reset(w http.ResponseWriter, req *http.Request) {
+	this.Request = req
+	if this.Writer == nil {
+		this.Writer = &responseWriter{}
+	}
+	this.Writer.(*responseWriter).reset(w)
 	this.handlers = nil
 	this.params = nil
 	this.index = -1

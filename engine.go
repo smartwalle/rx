@@ -46,9 +46,7 @@ func (this *Engine) rebuild404Handlers() {
 
 func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	var c = this.pool.Get().(*Context)
-	c.reset()
-	c.Writer = w
-	c.Request = req
+	c.reset(w, req)
 
 	this.handleHTTPRequest(c)
 
@@ -92,7 +90,14 @@ func (this *Engine) exec(c *Context, path string, node *pathNode) bool {
 }
 
 func (this *Engine) handleError(c *Context, status int, content []byte) {
+	var w = c.Writer.(*responseWriter)
+	w.WriteHeader(status)
+
 	c.Next()
-	c.Writer.WriteHeader(status)
-	c.Writer.Write(content)
+
+	if w.Written() {
+		return
+	}
+
+	w.Write(content)
 }

@@ -7,27 +7,15 @@ import (
 
 func main() {
 	var s = rx.New()
-	s.GET("/", func(c *rx.Context) {
+	s.GET("/hello", func(c *rx.Context) {
 		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
-	s.GET("/t1", func(c *rx.Context) {
+	s.GET("/world", func(c *rx.Context) {
 		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
-	s.GET("/t1/h1", func(c *rx.Context) {
-		c.Writer.Write([]byte(c.Request.URL.Path))
-	})
-	s.GET("/t1/h2", func(c *rx.Context) {
-		c.Writer.Write([]byte(c.Request.URL.Path))
-	})
-	s.GET("/t2/h1", func(c *rx.Context) {
-		c.Writer.Write([]byte(c.Request.URL.Path))
-	})
-	s.GET("/t2/h2", func(c *rx.Context) {
-		c.Writer.Write([]byte(c.Request.URL.Path))
+	s.NoRoute(func(c *rx.Context) {
+		c.Writer.Write([]byte("什么?"))
 	})
 
-	s.Print()
-
-	http.ListenAndServe(":9987", s)
-
+	http.ListenAndServe(":8891", s)
 }
