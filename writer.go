@@ -19,6 +19,10 @@ func (this *responseWriter) reset(w http.ResponseWriter) {
 	this.status = defaultWriteStatus
 }
 
+func (this *responseWriter) StatusCode() int {
+	return this.status
+}
+
 func (this *responseWriter) WriteHeader(statusCode int) {
 	if statusCode > 0 && !this.Written() {
 		this.status = statusCode

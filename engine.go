@@ -74,27 +74,30 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 
 	var tree = this.RouterGroup.trees[method]
 	if tree != nil {
+		// 先使用完整路径进行匹配
 		var nodes = tree.find(path, false)
 		if len(nodes) > 0 {
 			var node = nodes[0]
 			if ok := this.exec(c, path, node); ok {
 				return
 			}
-		} else {
-			nodes = tree.find(path, true)
-			for _, node := range nodes {
-				if ok := this.exec(c, path, node); ok {
-					return
-				}
+		}
+
+		// 完整路径匹配失败，再尝试正则匹配
+		nodes = tree.find(path, true)
+		for _, node := range nodes {
+			if ok := this.exec(c, path, node); ok {
+				return
 			}
 		}
 	}
 
+	// 匹配失败，返回 404 错误
 	c.handlers = this.allNoRoute
 	this.handleError(c, http.StatusNotFound, default404Body)
 }
 
-func (this *Engine) exec(c *Context, path string, node *pathNode) bool {
+func (this *Engine) exec(c *Context, path string, node *treeNode) bool {
 	if params, ok := node.match(path); ok {
 		c.params = params
 		c.handlers = node.handlers

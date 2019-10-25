@@ -11,45 +11,61 @@ const (
 	wildcard2 = `([\S]+)`
 )
 
-type pathNodes map[string]*pathNode
+type treeNodes map[string]*treeNode
 
-func (this pathNodes) add(node *pathNode) {
+func (this treeNodes) add(node *treeNode) {
 	if node == nil {
 		return
 	}
 	this[node.key] = node
 }
 
-func (this pathNodes) get(key string) *pathNode {
+func (this treeNodes) get(key string) *treeNode {
 	return this[key]
 }
 
-func (this pathNodes) del(key string) {
+func (this treeNodes) del(key string) {
 	delete(this, key)
 }
 
-type pathNode struct {
-	key      string
-	depth    int
-	children pathNodes
+type treeNodeChain []*treeNode
 
-	path     string
-	isPath   bool
-	handlers HandlerChain
-
-	regex      *regexp.Regexp
-	paramNames []string
+func (this treeNodeChain) Len() int {
+	return len(this)
 }
 
-func newPathNode(key string, depth int) *pathNode {
-	var n = &pathNode{}
+func (this treeNodeChain) Less(i, j int) bool {
+	return this[i].priority < this[j].priority
+}
+
+func (this treeNodeChain) Swap(i, j int) {
+	this[i], this[j] = this[j], this[i]
+}
+
+type treeNode struct {
+	key      string    // 标识
+	depth    int       // 深度
+	priority int       // 节点的优先级，按照节点添加添加的顺序递增，值越小优先级越高，正则匹配的时候，将按照这个顺序进行匹配
+	children treeNodes // 子节点
+
+	path     string       // 对应的路径
+	isPath   bool         // 是否为一个有效的路径
+	handlers HandlerChain // 对应的 handler 列表
+
+	regex      *regexp.Regexp // path 对应的正则表达式
+	paramNames []string       // path 中对应的参数名称列表
+}
+
+func newPathNode(key string, depth, priority int) *treeNode {
+	var n = &treeNode{}
 	n.key = key
 	n.depth = depth
-	n.children = make(pathNodes)
+	n.priority = priority
+	n.children = make(treeNodes)
 	return n
 }
 
-func (this *pathNode) reset() {
+func (this *treeNode) reset() {
 	this.path = ""
 	this.isPath = false
 	this.handlers = nil
@@ -57,19 +73,21 @@ func (this *pathNode) reset() {
 	this.paramNames = nil
 }
 
-func (this *pathNode) add(node *pathNode) {
+func (this *treeNode) add(node *treeNode) {
 	this.children.add(node)
 }
 
-func (this *pathNode) get(key string) *pathNode {
+func (this *treeNode) get(key string) *treeNode {
 	return this.children.get(key)
 }
 
-func (this *pathNode) remove(key string) {
+func (this *treeNode) remove(key string) {
 	this.children.del(key)
 }
 
-func (this *pathNode) prepare(path string, handlers HandlerChain) {
+// prepare 主要对 path 进行预处理，检测该 path 是否包含正则表达式，
+// 如果包含正则表达式，则编译成正则表达式对象缓存起来，并提取出相应的参数列表。
+func (this *treeNode) prepare(path string, handlers HandlerChain) {
 	this.path = path
 	this.isPath = true
 	this.handlers = handlers
@@ -114,7 +132,7 @@ func (this *pathNode) prepare(path string, handlers HandlerChain) {
 	}
 }
 
-func (this *pathNode) match(path string) (Params, bool) {
+func (this *treeNode) match(path string) (Params, bool) {
 	if this.regex != nil {
 		return this.matchWithRegex(path)
 	}
@@ -124,7 +142,7 @@ func (this *pathNode) match(path string) (Params, bool) {
 	return nil, false
 }
 
-func (this *pathNode) matchWithRegex(path string) (Params, bool) {
+func (this *treeNode) matchWithRegex(path string) (Params, bool) {
 	var mResult = this.regex.FindStringSubmatch(path)
 	if len(mResult) == 0 {
 		return nil, false
@@ -146,11 +164,11 @@ func (this *pathNode) matchWithRegex(path string) (Params, bool) {
 	return param, true
 }
 
-func (this *pathNode) String() string {
-	return fmt.Sprintf("{Key:%s Path:%s}", this.key, this.path)
+func (this *treeNode) String() string {
+	return fmt.Sprintf("{Depth:%d Key:%s Path:%s}", this.depth, this.key, this.path)
 }
 
-func (this *pathNode) Print() {
+func (this *treeNode) Print() {
 	for i := 0; i < this.depth; i++ {
 		fmt.Print("-")
 	}

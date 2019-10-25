@@ -1,12 +1,18 @@
 package rx
 
+import (
+	"sort"
+)
+
 type methodTree struct {
-	root *pathNode
+	root       *treeNode
+	numOfNodes int // 拥有的节点数量，只增不减
 }
 
 func newMethodTree() *methodTree {
 	var t = &methodTree{}
-	t.root = newPathNode("/", 1)
+	t.numOfNodes = 1
+	t.root = newPathNode("/", 1, t.numOfNodes)
 	return t
 }
 
@@ -25,7 +31,8 @@ func (this *methodTree) add(path string, handlers HandlerChain) {
 		for _, key := range paths {
 			var child = node.get(key)
 			if child == nil {
-				child = newPathNode(key, node.depth+1)
+				this.numOfNodes++
+				child = newPathNode(key, node.depth+1, this.numOfNodes)
 				node.add(child)
 			}
 			node = child
@@ -34,7 +41,7 @@ func (this *methodTree) add(path string, handlers HandlerChain) {
 	node.prepare(path, handlers)
 }
 
-func (this *methodTree) find(path string, isRegex bool) (nodes []*pathNode) {
+func (this *methodTree) find(path string, isRegex bool) (nodes []*treeNode) {
 	if path == "" {
 		return nil
 	}
@@ -56,7 +63,7 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*pathNode) {
 			return nil
 		}
 
-		if child.path == path && !isRegex {
+		if child.path == path && child.isPath && !isRegex {
 			nodes = append(nodes, child)
 			return nodes
 		}
@@ -69,13 +76,14 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*pathNode) {
 	}
 
 	// 只有 isRegex 为 true 的时候才会执行以下代码
-	var queue = make([]*pathNode, 0, 1)
+	var queue = make([]*treeNode, 0, 1)
 	queue = append(queue, node)
-	// 将 queue 列表中满足条件的 pathNode 及其满足条件的子 pathNode 添加到 nodes 列表中
+	// 将 queue 列表中满足条件的 treeNode 及其满足条件的子 treeNode 添加到 nodes 列表中
 	for len(queue) > 0 {
-		var temp []*pathNode
+		var temp []*treeNode
 		for _, qNode := range queue {
-			if qNode.isPath {
+			// 只添加拥有有效路径和正则表达式的节点，以减少后续正则匹配的次数
+			if qNode.isPath && qNode.regex != nil {
 				nodes = append(nodes, qNode)
 			}
 			for _, child := range qNode.children {
@@ -85,7 +93,9 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*pathNode) {
 		queue = temp
 	}
 
-	// TODO 对 nodes 按添加顺序进行排序
+	// 对 nodes 进行排序
+	var nodesChain = treeNodeChain(nodes)
+	sort.Sort(nodesChain)
 
 	return nodes
 }
@@ -96,10 +106,11 @@ func (this *methodTree) clean(path string) {
 	}
 
 	var node = this.root
-	var nodes = make([]*pathNode, 1, 1)
+	var nodes = make([]*treeNode, 1, 1)
 	nodes[0] = node
 
 	if node.path != path {
+		// 查询出 path 对应的节点链路及其对应的节点
 		var paths = splitPath(path)
 		for _, key := range paths {
 			var child = node.get(key)
@@ -117,13 +128,17 @@ func (this *methodTree) clean(path string) {
 	}
 
 	if node != nil {
+		// 将该节点重置
 		node.reset()
+		// 清理节点链路，移除无效的节点
 		var nodeLen = len(nodes)
 		for i := nodeLen - 1; i >= 0; i-- {
 			var child = nodes[i]
+			// 如果该节点是一个有效路径，则终止
 			if child.isPath {
 				return
 			}
+			// 如果该节点没有子节点，则把该节点从其父节点中移除
 			if len(child.children) == 0 && i != 0 {
 				var parent = nodes[i-1]
 				parent.remove(child.key)

@@ -47,7 +47,7 @@ func (this *RouterGroup) Print() {
 	}
 }
 
-func (this *RouterGroup) find(method, path string, isRegex bool) []*pathNode {
+func (this *RouterGroup) find(method, path string, isRegex bool) []*treeNode {
 	path = cleanPath(path)
 
 	var tree = this.trees[method]
