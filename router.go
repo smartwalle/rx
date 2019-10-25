@@ -11,6 +11,18 @@ type Router interface {
 	Group(path string, handlers ...HandlerFunc) Router
 
 	GET(path string, handlers ...HandlerFunc)
+
+	HEAD(path string, handlers ...HandlerFunc)
+
+	POST(path string, handlers ...HandlerFunc)
+
+	PUT(path string, handlers ...HandlerFunc)
+
+	PATCH(path string, handlers ...HandlerFunc)
+
+	DELETE(path string, handlers ...HandlerFunc)
+
+	OPTIONS(path string, handlers ...HandlerFunc)
 }
 
 type RouterGroup struct {
@@ -61,6 +73,30 @@ func (this *RouterGroup) Group(path string, handlers ...HandlerFunc) Router {
 
 func (this *RouterGroup) GET(path string, handlers ...HandlerFunc) {
 	this.Handle(http.MethodGet, path, handlers...)
+}
+
+func (this *RouterGroup) HEAD(path string, handlers ...HandlerFunc) {
+	this.Handle(http.MethodHead, path, handlers...)
+}
+
+func (this *RouterGroup) POST(path string, handlers ...HandlerFunc) {
+	this.Handle(http.MethodPost, path, handlers...)
+}
+
+func (this *RouterGroup) PUT(path string, handlers ...HandlerFunc) {
+	this.Handle(http.MethodPut, path, handlers...)
+}
+
+func (this *RouterGroup) PATCH(path string, handlers ...HandlerFunc) {
+	this.Handle(http.MethodPatch, path, handlers...)
+}
+
+func (this *RouterGroup) DELETE(path string, handlers ...HandlerFunc) {
+	this.Handle(http.MethodDelete, path, handlers...)
+}
+
+func (this *RouterGroup) OPTIONS(path string, handlers ...HandlerFunc) {
+	this.Handle(http.MethodOptions, path, handlers...)
 }
 
 func (this *RouterGroup) Handle(method, path string, handlers ...HandlerFunc) {
