@@ -7,12 +7,9 @@ import (
 )
 
 const (
-	defaultWildcard = `([^\s/]+)`
+	wildcard1 = `([^\s/]+)`
+	wildcard2 = `([\S]+)`
 )
-
-//([\w]+)
-//(?P<value>.*)
-//([\S]+)
 
 type pathNode struct {
 	key      string
@@ -76,7 +73,12 @@ func (this *pathNode) prepare(path string, handlers ...HandlerFunc) {
 
 		if firstChar == ':' {
 			var name = p[1:strLen]
-			pattern = pattern + "/" + defaultWildcard
+			pattern = pattern + "/" + wildcard1
+			paramsNames = append(paramsNames, name)
+			isRegex = true
+		} else if firstChar == '*' {
+			var name = p[1:strLen]
+			pattern = pattern + "/" + wildcard2
 			paramsNames = append(paramsNames, name)
 			isRegex = true
 		} else if firstChar == '{' && lastChar == '}' {
