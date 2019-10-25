@@ -63,6 +63,7 @@ func (this *pathNode) prepare(path string, handlers ...HandlerFunc) {
 	var paths = splitPath(path)
 	var pattern = ""
 	var paramsNames = make([]string, 0, len(paths))
+	var isRegex = false
 
 	for _, p := range paths {
 		if p == "" {
@@ -77,17 +78,21 @@ func (this *pathNode) prepare(path string, handlers ...HandlerFunc) {
 			var name = p[1:strLen]
 			pattern = pattern + "/" + defaultWildcard
 			paramsNames = append(paramsNames, name)
+			isRegex = true
 		} else if firstChar == '{' && lastChar == '}' {
 			var subStrList = strings.Split(p[1:strLen-1], ":")
 			paramsNames = append(paramsNames, subStrList[0])
 			pattern = pattern + "/" + subStrList[1]
+			isRegex = true
 		} else {
 			pattern = pattern + "/" + p
 		}
 	}
 
-	this.regex = regexp.MustCompile(pattern)
-	this.paramNames = paramsNames
+	if isRegex {
+		this.regex = regexp.MustCompile(pattern)
+		this.paramNames = paramsNames
+	}
 }
 
 func (this *pathNode) match(path string) (Params, bool) {
