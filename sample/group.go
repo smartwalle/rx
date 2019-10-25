@@ -47,5 +47,10 @@ func main() {
 		fmt.Fprintln(c.Writer, "order id", c.Param("id"))
 	})
 
+	// point
+	s.Group("/point", func(c *rx.Context) {
+		fmt.Fprintln(c.Writer, "nothing to do")
+	})
+
 	http.ListenAndServe(":8892", s)
 }
