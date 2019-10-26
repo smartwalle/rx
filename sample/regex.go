@@ -34,5 +34,10 @@ func main() {
 		fmt.Fprintln(c.Writer, "order id", c.Param("order_id"))
 	})
 
+	s.GET("/user/*path", func(c *rx.Context) {
+		fmt.Fprintln(c.Writer, "/user/*path")
+		fmt.Fprintln(c.Writer, "path", c.Param("path"))
+	})
+
 	http.ListenAndServe(":8894", s)
 }
