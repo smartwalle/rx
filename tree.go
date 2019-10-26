@@ -65,7 +65,7 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*treeNode) {
 			return nil
 		}
 
-		if child.path == path && child.isPath && !isRegex {
+		if child.isValidPath(path) && !isRegex {
 			nodes = append(nodes, child)
 			return nodes
 		}
@@ -85,7 +85,7 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*treeNode) {
 		var temp []*treeNode
 		for _, qNode := range queue {
 			// 只添加拥有有效路径和正则表达式的节点，以减少后续正则匹配的次数
-			if qNode.isPath && qNode.regex != nil {
+			if qNode.isValidRegexPath() {
 				nodes = append(nodes, qNode)
 			}
 			for _, child := range qNode.children {
@@ -137,7 +137,7 @@ func (this *methodTree) clean(path string) {
 		for i := nodeLen - 1; i >= 0; i-- {
 			var child = nodes[i]
 			// 如果该节点是一个有效路径，则终止
-			if child.isPath {
+			if child.isPath() {
 				return
 			}
 			// 如果该节点没有子节点，则把该节点从其父节点中移除

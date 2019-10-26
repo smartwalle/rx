@@ -10,7 +10,7 @@ func TestTree_Find(t *testing.T) {
 	var h = HandlerChain{}
 	h = append(h, func(c *Context) {})
 
-	var tree = newMethodTree()
+	var tree = newMethodTree("GET")
 	tree.add("/", h)
 	tree.add("/t1", h)
 	tree.add("/t1/h1", h)
@@ -55,7 +55,7 @@ func TestTree_Clean(t *testing.T) {
 	var h = HandlerChain{}
 	h = append(h, func(c *Context) {})
 
-	var tree = newMethodTree()
+	var tree = newMethodTree("GET")
 	tree.add("/", h)
 	tree.add("/t1", h)
 	tree.add("/t1/h1", h)

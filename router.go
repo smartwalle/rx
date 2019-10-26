@@ -131,16 +131,18 @@ func (this *RouterGroup) handle(method, path string, handlers HandlerChain) {
 }
 
 func (this *RouterGroup) combineHandlers(handlers HandlerChain) HandlerChain {
-	if len(this.handlers) == 0 && len(handlers) == 0 {
+	var hLen1 = len(this.handlers)
+	var hLen2 = len(handlers)
+	if hLen1 == 0 && hLen2 == 0 {
 		return nil
 	}
 
 	var nHandlers = make(HandlerChain, len(this.handlers)+len(handlers))
-	if len(this.handlers) > 0 {
+	if hLen1 > 0 {
 		copy(nHandlers, this.handlers)
 	}
-	if len(handlers) > 0 {
-		copy(nHandlers[len(this.handlers):], handlers)
+	if hLen2 > 0 {
+		copy(nHandlers[hLen1:], handlers)
 	}
 	return nHandlers
 }

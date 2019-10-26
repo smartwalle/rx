@@ -49,7 +49,6 @@ type treeNode struct {
 	children treeNodes // 子节点
 
 	path     string       // 对应的路径
-	isPath   bool         // 是否为一个有效的路径
 	handlers HandlerChain // 对应的 handler 列表
 
 	regex      *regexp.Regexp // path 对应的正则表达式
@@ -67,7 +66,6 @@ func newPathNode(key string, depth, priority int) *treeNode {
 
 func (this *treeNode) reset() {
 	this.path = ""
-	this.isPath = false
 	this.handlers = nil
 	this.regex = nil
 	this.paramNames = nil
@@ -90,11 +88,6 @@ func (this *treeNode) remove(key string) {
 func (this *treeNode) prepare(path string, handlers HandlerChain) {
 	this.path = path
 	this.handlers = handlers
-	if len(handlers) > 0 {
-		this.isPath = true
-	} else {
-		this.isPath = false
-	}
 
 	var paths = splitPath(path)
 	var pattern = ""
@@ -166,6 +159,24 @@ func (this *treeNode) matchWithRegex(path string) (Params, bool) {
 	}
 
 	return param, true
+}
+
+func (this *treeNode) isPath() bool {
+	return len(this.handlers) > 0
+}
+
+func (this *treeNode) isValidPath(path string) bool {
+	if len(this.handlers) > 0 && path == this.path {
+		return true
+	}
+	return false
+}
+
+func (this *treeNode) isValidRegexPath() bool {
+	if len(this.handlers) > 0 && this.regex != nil {
+		return true
+	}
+	return false
 }
 
 func (this *treeNode) String() string {
