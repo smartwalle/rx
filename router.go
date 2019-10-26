@@ -122,7 +122,7 @@ func (this *RouterGroup) handle(method, path string, handlers HandlerChain) {
 
 	var tree = this.trees[method]
 	if tree == nil {
-		tree = newMethodTree()
+		tree = newMethodTree(method)
 		this.trees[method] = tree
 	}
 	tree.add(path, nHandlers)

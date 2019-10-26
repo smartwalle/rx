@@ -5,14 +5,16 @@ import (
 )
 
 type methodTree struct {
+	method     string
 	root       *treeNode
 	numOfNodes int // 拥有的节点数量，只增不减
 }
 
-func newMethodTree() *methodTree {
+func newMethodTree(method string) *methodTree {
 	var t = &methodTree{}
-	t.numOfNodes = 1
+	t.method = method
 	t.root = newPathNode("/", 1, t.numOfNodes)
+	t.numOfNodes = 1
 	return t
 }
 

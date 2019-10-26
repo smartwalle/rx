@@ -89,8 +89,12 @@ func (this *treeNode) remove(key string) {
 // 如果包含正则表达式，则编译成正则表达式对象缓存起来，并提取出相应的参数列表。
 func (this *treeNode) prepare(path string, handlers HandlerChain) {
 	this.path = path
-	this.isPath = true
 	this.handlers = handlers
+	if len(handlers) > 0 {
+		this.isPath = true
+	} else {
+		this.isPath = false
+	}
 
 	var paths = splitPath(path)
 	var pattern = ""
