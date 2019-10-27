@@ -81,13 +81,13 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 			if ok := this.exec(c, path, node); ok {
 				return
 			}
-		}
-
-		// 完整路径匹配失败，再尝试正则匹配
-		nodes = tree.find(path, true)
-		for _, node := range nodes {
-			if ok := this.exec(c, path, node); ok {
-				return
+		} else {
+			// 完整路径匹配失败，则尝试正则匹配
+			nodes = tree.find(path, true)
+			for _, node := range nodes {
+				if ok := this.exec(c, path, node); ok {
+					return
+				}
 			}
 		}
 	}
