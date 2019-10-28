@@ -72,7 +72,7 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 	var method = c.Request.Method
 	var path = cleanPath(c.Request.URL.Path)
 
-	var tree = this.RouterGroup.trees[method]
+	var tree = this.getTree(method)
 	if tree != nil {
 		// 先使用完整路径进行匹配
 		var nodes = tree.find(path, false)

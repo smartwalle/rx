@@ -11,6 +11,8 @@ type Router interface {
 
 	Group(path string, handlers ...HandlerFunc) *RouterGroup
 
+	Break(method, path string)
+
 	GET(path string, handlers ...HandlerFunc)
 
 	HEAD(path string, handlers ...HandlerFunc)
@@ -128,6 +130,10 @@ func (this *RouterGroup) handle(method, path string, handlers HandlerChain) {
 	tree.add(path, nHandlers)
 
 	logger.Output(3, fmt.Sprintf("%-8s %-30s --> %s (%d handlers)\n", method, path, nameOfFunction(nHandlers.Last()), nHandlers.Len()))
+}
+
+func (this *RouterGroup) getTree(method string) *methodTree {
+	return this.trees[method]
 }
 
 func (this *RouterGroup) combineHandlers(handlers HandlerChain) HandlerChain {
