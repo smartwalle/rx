@@ -88,8 +88,10 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*treeNode) {
 			if qNode.isValidRegexPath() {
 				nodes = append(nodes, qNode)
 			}
-			for _, child := range qNode.children {
-				temp = append(temp, child)
+
+			var children = qNode.children()
+			if len(children) > 0 {
+				temp = append(temp, children...)
 			}
 		}
 		queue = temp
@@ -141,7 +143,7 @@ func (this *methodTree) clean(path string) {
 				return
 			}
 			// 如果该节点没有子节点，则把该节点从其父节点中移除
-			if len(child.children) == 0 && i != 0 {
+			if child.numOfChildren() == 0 && i != 0 {
 				var parent = nodes[i-1]
 				parent.remove(child.key)
 			}

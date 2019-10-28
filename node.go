@@ -4,29 +4,13 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 const (
 	wildcard1 = `([^\s/]+)`
 	wildcard2 = `([\S]+)`
 )
-
-type treeNodes map[string]*treeNode
-
-func (this treeNodes) add(node *treeNode) {
-	if node == nil {
-		return
-	}
-	this[node.key] = node
-}
-
-func (this treeNodes) get(key string) *treeNode {
-	return this[key]
-}
-
-func (this treeNodes) del(key string) {
-	delete(this, key)
-}
 
 type treeNodeChain []*treeNode
 
@@ -43,10 +27,11 @@ func (this treeNodeChain) Swap(i, j int) {
 }
 
 type treeNode struct {
-	key      string    // 标识
-	depth    int       // 深度
-	priority int       // 节点的优先级，按照节点添加添加的顺序递增，值越小优先级越高，正则匹配的时候，将按照这个顺序进行匹配
-	children treeNodes // 子节点
+	mu       sync.RWMutex
+	key      string               // 标识
+	depth    int                  // 深度
+	priority int                  // 节点的优先级，按照节点添加添加的顺序递增，值越小优先级越高，正则匹配的时候，将按照这个顺序进行匹配
+	subNodes map[string]*treeNode // 子节点
 
 	path     string       // 对应的路径
 	handlers HandlerChain // 对应的 handler 列表
@@ -60,7 +45,7 @@ func newPathNode(key string, depth, priority int) *treeNode {
 	n.key = key
 	n.depth = depth
 	n.priority = priority
-	n.children = make(treeNodes)
+	n.subNodes = make(map[string]*treeNode)
 	return n
 }
 
@@ -71,16 +56,43 @@ func (this *treeNode) reset() {
 	this.paramNames = nil
 }
 
+func (this *treeNode) numOfChildren() int {
+	this.mu.RLock()
+	var l = len(this.subNodes)
+	this.mu.RUnlock()
+	return l
+}
+
+func (this *treeNode) children() []*treeNode {
+	this.mu.RLock()
+	var ns = make([]*treeNode, 0, len(this.subNodes))
+	for _, n := range this.subNodes {
+		ns = append(ns, n)
+	}
+	this.mu.RUnlock()
+	return ns
+}
+
 func (this *treeNode) add(node *treeNode) {
-	this.children.add(node)
+	if node == nil {
+		return
+	}
+	this.mu.Lock()
+	this.subNodes[node.key] = node
+	this.mu.Unlock()
 }
 
 func (this *treeNode) get(key string) *treeNode {
-	return this.children.get(key)
+	this.mu.RLock()
+	var n = this.subNodes[key]
+	this.mu.RUnlock()
+	return n
 }
 
 func (this *treeNode) remove(key string) {
-	this.children.del(key)
+	this.mu.Lock()
+	delete(this.subNodes, key)
+	this.mu.Unlock()
 }
 
 // prepare 主要对 path 进行预处理，检测该 path 是否包含正则表达式，
@@ -188,7 +200,7 @@ func (this *treeNode) Print() {
 		fmt.Print("-")
 	}
 	fmt.Println(this.String())
-	for _, c := range this.children {
+	for _, c := range this.subNodes {
 		c.Print()
 	}
 }
