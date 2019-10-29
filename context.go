@@ -38,6 +38,11 @@ func (this *Context) Abort() {
 	this.abort = true
 }
 
+func (this *Context) AbortWithStatus(statusCode int) {
+	this.abort = true
+	this.Writer.WriteHeader(statusCode)
+}
+
 func (this *Context) Params() Params {
 	return this.params
 }
