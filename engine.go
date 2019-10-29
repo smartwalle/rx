@@ -102,12 +102,13 @@ func (this *Engine) exec(c *Context, path string, node *treeNode) bool {
 		c.params = params
 		c.handlers = node.handlers
 		c.Next()
+		c.Writer.(*responseWriter).WriteHeaderNow()
 		return true
 	}
 	return false
 }
 
-func (this *Engine) handleError(c *Context, status int, content []byte) {
+func (this *Engine) handleError(c *Context, status int, body []byte) {
 	var w = c.Writer.(*responseWriter)
 	w.WriteHeader(status)
 
@@ -117,5 +118,5 @@ func (this *Engine) handleError(c *Context, status int, content []byte) {
 		return
 	}
 
-	w.Write(content)
+	w.Write(body)
 }

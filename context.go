@@ -43,6 +43,26 @@ func (this *Context) AbortWithStatus(statusCode int) {
 	this.Writer.WriteHeader(statusCode)
 }
 
+func (this *Context) Write(statusCode int, b []byte) {
+	this.Writer.WriteHeader(statusCode)
+	this.Writer.Write(b)
+}
+
+func (this *Context) Render(statusCode int, r Render) {
+	this.Writer.WriteHeader(statusCode)
+
+	r.WriteContentType(this.Writer)
+
+	if !bodyAllowedForStatus(statusCode) {
+		var w = this.Writer.(*responseWriter)
+		w.WriteHeaderNow()
+	}
+
+	if err := r.Render(this.Writer); err != nil {
+		panic(err)
+	}
+}
+
 func (this *Context) Params() Params {
 	return this.params
 }

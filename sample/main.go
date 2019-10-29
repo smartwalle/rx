@@ -8,10 +8,11 @@ import (
 func main() {
 	var s = rx.New()
 	s.GET("/hello", func(c *rx.Context) {
+		c.Writer.WriteHeader(http.StatusOK)
 		c.Writer.Write([]byte(c.Request.URL.Path))
 	})
 	s.GET("/world", func(c *rx.Context) {
-		c.Writer.Write([]byte(c.Request.URL.Path))
+		c.Write(http.StatusOK, []byte(c.Request.URL.Path))
 	})
 	s.NoRoute(func(c *rx.Context) {
 		c.Writer.Write([]byte("什么?"))

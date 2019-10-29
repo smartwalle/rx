@@ -29,14 +29,14 @@ func (this *responseWriter) WriteHeader(statusCode int) {
 	}
 }
 
-func (this *responseWriter) WriteStatus() {
+func (this *responseWriter) WriteHeaderNow() {
 	if !this.Written() {
 		this.ResponseWriter.WriteHeader(this.status)
 	}
 }
 
 func (this *responseWriter) Write(b []byte) (n int, err error) {
-	this.WriteStatus()
+	this.WriteHeaderNow()
 	n, err = this.ResponseWriter.Write(b)
 	this.size = n
 	return n, err

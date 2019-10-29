@@ -1,6 +1,7 @@
 package rx
 
 import (
+	"net/http"
 	"path"
 	"reflect"
 	"runtime"
@@ -57,4 +58,16 @@ func joinPaths(absolutePath, relativePath string) string {
 
 func nameOfFunction(f interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+}
+
+func bodyAllowedForStatus(status int) bool {
+	switch {
+	case status >= 100 && status <= 199:
+		return false
+	case status == http.StatusNoContent:
+		return false
+	case status == http.StatusNotModified:
+		return false
+	}
+	return true
 }
