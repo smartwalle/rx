@@ -26,6 +26,8 @@ type Router interface {
 	DELETE(path string, handlers ...HandlerFunc)
 
 	OPTIONS(path string, handlers ...HandlerFunc)
+
+	Any(path string, handlers ...HandlerFunc)
 }
 
 type RouterGroup struct {
@@ -109,6 +111,18 @@ func (this *RouterGroup) DELETE(path string, handlers ...HandlerFunc) {
 
 func (this *RouterGroup) OPTIONS(path string, handlers ...HandlerFunc) {
 	this.handle(http.MethodOptions, path, handlers)
+}
+
+func (this *RouterGroup) Any(path string, handlers ...HandlerFunc) {
+	this.handle(http.MethodGet, path, handlers)
+	this.handle(http.MethodHead, path, handlers)
+	this.handle(http.MethodPost, path, handlers)
+	this.handle(http.MethodPut, path, handlers)
+	this.handle(http.MethodPatch, path, handlers)
+	this.handle(http.MethodDelete, path, handlers)
+	this.handle(http.MethodConnect, path, handlers)
+	this.handle(http.MethodOptions, path, handlers)
+	this.handle(http.MethodTrace, path, handlers)
 }
 
 func (this *RouterGroup) handle(method, path string, handlers HandlerChain) {
