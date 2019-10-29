@@ -74,6 +74,14 @@ func (this *Context) Render(statusCode int, r Render) {
 	}
 }
 
+func (this *Context) Header(key, value string) {
+	if value == "" {
+		this.Writer.Header().Del(key)
+		return
+	}
+	this.Writer.Header().Set(key, value)
+}
+
 func (this *Context) Params() Params {
 	return this.params
 }

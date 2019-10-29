@@ -11,6 +11,7 @@ func main() {
 	s.GET("/json", func(c *rx.Context) {
 		var r = JSONRender{data: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
 		c.Render(http.StatusOK, r)
+		panic("wtf")
 	})
 	s.GET("/json2", func(c *rx.Context) {
 		c.Writer.Header()["Content-Type"] = contentType
