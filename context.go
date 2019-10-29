@@ -4,6 +4,10 @@ import (
 	"net/http"
 )
 
+const (
+	contentType = "Content-Type"
+)
+
 type Context struct {
 	Request  *http.Request
 	Writer   http.ResponseWriter
@@ -49,9 +53,16 @@ func (this *Context) Write(statusCode int, b []byte) {
 }
 
 func (this *Context) Render(statusCode int, r Render) {
+	if r == nil {
+		return
+	}
+
 	this.Writer.WriteHeader(statusCode)
 
-	r.WriteContentType(this.Writer)
+	var header = this.Writer.Header()
+	if val := header[contentType]; len(val) == 0 {
+		header[contentType] = r.ContentType()
+	}
 
 	if !bodyAllowedForStatus(statusCode) {
 		var w = this.Writer.(*responseWriter)
