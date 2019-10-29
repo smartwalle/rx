@@ -12,6 +12,11 @@ func main() {
 		var r = JSONRender{data: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
 		c.Render(http.StatusOK, r)
 	})
+	s.GET("/json2", func(c *rx.Context) {
+		c.Writer.Header()["Content-Type"] = contentType
+		bytes, _ := json.Marshal([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 0})
+		c.Write(http.StatusOK, bytes)
+	})
 	http.ListenAndServe(":8897", s)
 }
 
