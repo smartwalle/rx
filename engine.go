@@ -95,7 +95,7 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 }
 
 func (this *Engine) exec(c *Context, path string, node *treeNode) bool {
-	if params, ok := node.match(path); ok {
+	if params, ok := node.match(path, c.params); ok {
 		c.params = params
 		c.handlers = node.handlers
 		c.Next()

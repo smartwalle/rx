@@ -36,8 +36,9 @@ type treeNode struct {
 	path     string       // 对应的路径
 	handlers HandlerChain // 对应的 handler 列表
 
-	regex      *regexp.Regexp // path 对应的正则表达式
-	paramNames []string       // path 中对应的参数名称列表
+	regex       *regexp.Regexp // path 对应的正则表达式
+	paramNames  []string       // path 中对应的参数名称列表
+	numOfParams int            // 参数的数量
 }
 
 func newPathNode(key string, depth, priority int) *treeNode {
@@ -96,7 +97,7 @@ func (this *treeNode) prepare(path string, handlers HandlerChain) {
 
 	var paths = splitPath(path)
 	var pattern = ""
-	var paramsNames = make([]string, 0, len(paths))
+	var paramNames = make([]string, 0, len(paths))
 	var isRegex = false
 
 	for _, p := range paths {
@@ -111,16 +112,16 @@ func (this *treeNode) prepare(path string, handlers HandlerChain) {
 		if firstChar == ':' {
 			var name = p[1:strLen]
 			pattern = pattern + "/" + wildcard1
-			paramsNames = append(paramsNames, name)
+			paramNames = append(paramNames, name)
 			isRegex = true
 		} else if firstChar == '*' {
 			var name = p[1:strLen]
 			pattern = pattern + "/" + wildcard2
-			paramsNames = append(paramsNames, name)
+			paramNames = append(paramNames, name)
 			isRegex = true
 		} else if firstChar == '{' && lastChar == '}' {
 			var subStrList = strings.Split(p[1:strLen-1], ":")
-			paramsNames = append(paramsNames, subStrList[0])
+			paramNames = append(paramNames, subStrList[0])
 			pattern = pattern + "/" + subStrList[1]
 			isRegex = true
 		} else {
@@ -130,7 +131,8 @@ func (this *treeNode) prepare(path string, handlers HandlerChain) {
 
 	if isRegex {
 		this.regex = regexp.MustCompile(pattern)
-		this.paramNames = paramsNames
+		this.paramNames = paramNames
+		this.numOfParams = len(this.paramNames)
 	}
 }
 
@@ -139,11 +141,12 @@ func (this *treeNode) unprepare() {
 	this.handlers = nil
 	this.regex = nil
 	this.paramNames = nil
+	this.numOfParams = 0
 }
 
-func (this *treeNode) match(path string) (Params, bool) {
+func (this *treeNode) match(path string, params Params) (Params, bool) {
 	if this.regex != nil {
-		return this.matchWithRegex(path)
+		return this.matchWithRegex(path, params)
 	}
 	if this.path == path {
 		return nil, true
@@ -151,7 +154,7 @@ func (this *treeNode) match(path string) (Params, bool) {
 	return nil, false
 }
 
-func (this *treeNode) matchWithRegex(path string) (Params, bool) {
+func (this *treeNode) matchWithRegex(path string, params Params) (Params, bool) {
 	var mResult = this.regex.FindStringSubmatch(path)
 	if len(mResult) == 0 {
 		return nil, false
@@ -161,16 +164,23 @@ func (this *treeNode) matchWithRegex(path string) (Params, bool) {
 		return nil, false
 	}
 
-	var param = make(Params)
+	var nParams = params
+
+	if cap(nParams) < this.numOfParams {
+		nParams = make(Params, 0, this.numOfParams)
+	}
+
 	for index, item := range mResult {
 		if index == 0 {
 			continue
 		}
 		var name = this.paramNames[index-1]
-		param.Set(name, item)
+
+		nParams = nParams[:len(nParams)+1]
+		nParams[index-1] = Param{key: name, value: item}
 	}
 
-	return param, true
+	return nParams, true
 }
 
 func (this *treeNode) isPath() bool {

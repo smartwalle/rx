@@ -1,11 +1,17 @@
 package rx
 
-type Params map[string]string
-
-func (p Params) Get(key string) string {
-	return p[key]
+type Param struct {
+	key   string
+	value string
 }
 
-func (p Params) Set(key, value string) {
-	p[key] = value
+type Params []Param
+
+func (ps Params) Get(key string) string {
+	for _, p := range ps {
+		if p.key == key {
+			return p.value
+		}
+	}
+	return ""
 }

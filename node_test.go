@@ -47,7 +47,7 @@ func TestNode_Match(t *testing.T) {
 		var n = newPathNode("test", 1, 1)
 		n.prepare(test.path, handlers)
 
-		var params, ok = n.match(test.testPath)
+		var params, ok = n.match(test.testPath, nil)
 		if ok != test.match || len(params) != test.numOfParams {
 			t.Errorf("%s - %s 的匹配结果应该为 %t - %d, 实际为 %t - %d", test.path, test.testPath, test.match, test.numOfParams, ok, len(params))
 		}

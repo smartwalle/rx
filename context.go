@@ -23,7 +23,7 @@ func (this *Context) reset(w http.ResponseWriter, req *http.Request) {
 	this.defaultWriter.reset(w)
 	this.Writer = &this.defaultWriter
 	this.handlers = nil
-	this.params = nil
+	this.params = this.params[0:0]
 	this.index = -1
 	this.abort = false
 }
