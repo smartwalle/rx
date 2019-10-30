@@ -73,16 +73,15 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 	var path = CleanPath(c.Request.URL.Path)
 
 	// 先使用完整路径进行匹配
-	var nodes = this.find(method, path, false)
-	if len(nodes) > 0 {
-		var node = nodes[0]
-		if ok := this.exec(c, path, node); ok {
+	c.nodes = this.find(method, path, false, c.nodes)
+	if len(c.nodes) > 0 {
+		if ok := this.exec(c, path, c.nodes[0]); ok {
 			return
 		}
 	} else {
 		// 完整路径匹配失败，则尝试正则匹配
-		nodes = this.find(method, path, true)
-		for _, node := range nodes {
+		c.nodes = this.find(method, path, true, c.nodes)
+		for _, node := range c.nodes {
 			if ok := this.exec(c, path, node); ok {
 				return
 			}

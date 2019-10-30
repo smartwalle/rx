@@ -44,7 +44,7 @@ func TestRouterGroup_Find(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if e := r.find(test.method, CleanPath(test.path), false); len(e) != test.numOfNodes {
+		if e := r.find(test.method, CleanPath(test.path), false, nil); len(e) != test.numOfNodes {
 			t.Errorf("%s - %s 的匹配结果应该为 %d, 实际为 %d", test.method, test.path, test.numOfNodes, len(e))
 		}
 	}

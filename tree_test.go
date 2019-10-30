@@ -101,7 +101,7 @@ func TestTree_Clean(t *testing.T) {
 }
 
 func treeFindTest(t *testing.T, tree *methodTree, path string, isRegex bool, numOfNodes int) {
-	if nodes := tree.find(path, isRegex); len(nodes) != numOfNodes {
+	if nodes := tree.find(path, isRegex, nil); len(nodes) != numOfNodes {
 		t.Errorf("%s 的匹配结果应该为 %d, 实际为 %d\n", path, numOfNodes, len(nodes))
 	}
 }

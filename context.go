@@ -16,6 +16,7 @@ type Context struct {
 	params        Params
 	index         int
 	abort         bool
+	nodes         treeNodes
 }
 
 func (this *Context) reset(w http.ResponseWriter, req *http.Request) {
@@ -26,6 +27,7 @@ func (this *Context) reset(w http.ResponseWriter, req *http.Request) {
 	this.params = this.params[0:0]
 	this.index = -1
 	this.abort = false
+	this.nodes = this.nodes[0:0]
 }
 
 func (this *Context) Next() {

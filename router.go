@@ -51,13 +51,13 @@ func (this *RouterGroup) print() {
 	}
 }
 
-func (this *RouterGroup) find(method, path string, isRegex bool) []*treeNode {
+func (this *RouterGroup) find(method, path string, isRegex bool, nodes treeNodes) treeNodes {
 	var tree = this.trees[method]
 	if tree == nil {
 		return nil
 	}
 
-	return tree.find(path, isRegex)
+	return tree.find(path, isRegex, nodes)
 }
 
 func (this *RouterGroup) Use(handlers ...HandlerFunc) Router {

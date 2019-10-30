@@ -43,38 +43,45 @@ func (this *methodTree) add(path string, handlers HandlerChain) {
 	node.prepare(path, handlers)
 }
 
-func (this *methodTree) find(path string, isRegex bool) (nodes []*treeNode) {
+func (this *methodTree) find(path string, isRegex bool, nodes treeNodes) treeNodes {
 	if path == "" {
 		return nil
 	}
 
 	var node = this.root
-
-	if node.path == path {
-		nodes = append(nodes, node)
-		return nodes
-	}
+	var nNodes = nodes
 
 	var paths = splitPath(path)
+	if cap(nNodes) < len(paths) {
+		nNodes = make(treeNodes, 0, len(paths))
+	}
+
+	if node.path == path {
+		nNodes = nNodes[:1]
+		nNodes[0] = node
+		return nNodes
+	}
+
 	for _, key := range paths {
 		var child = node.get(key)
 		if child == nil {
 			if isRegex {
 				break
 			}
-			return nil
+			return nNodes
 		}
 
 		if child.isValidPath(path) && !isRegex {
-			nodes = append(nodes, child)
-			return nodes
+			nNodes = nNodes[:1]
+			nNodes[0] = child
+			return nNodes
 		}
 
 		node = child
 	}
 
 	if !isRegex {
-		return nil
+		return nNodes
 	}
 
 	// 只有 isRegex 为 true 的时候才会执行以下代码
@@ -86,7 +93,7 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*treeNode) {
 		for _, qNode := range queue {
 			// 只添加拥有有效路径和正则表达式的节点，以减少后续正则匹配的次数
 			if qNode.isValidRegexPath() {
-				nodes = append(nodes, qNode)
+				nNodes = append(nNodes, qNode)
 			}
 
 			var children = qNode.children()
@@ -98,10 +105,9 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*treeNode) {
 	}
 
 	// 对 nodes 进行排序
-	var nNodes = treeNodes(nodes)
 	sort.Sort(nNodes)
 
-	return nodes
+	return nNodes
 }
 
 func (this *methodTree) clean(path string) {
