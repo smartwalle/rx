@@ -8,6 +8,7 @@ import (
 
 func main() {
 	var s = rx.New()
+	s.Use(rx.Log())
 	s.GET("/normal", func(c *rx.Context) {
 		fmt.Fprintln(c.Writer, "normal")
 	})

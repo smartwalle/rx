@@ -1,8 +1,10 @@
 package rx
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 func init() {
@@ -47,4 +49,24 @@ func (this *nilLogger) Printf(format string, args ...interface{}) {
 
 func (this *nilLogger) Output(calldepth int, s string) error {
 	return nil
+}
+
+func Log() HandlerFunc {
+	return func(c *Context) {
+		var beginTime = time.Now()
+		c.Next()
+		var endTime = time.Now()
+
+		var duration = endTime.Sub(beginTime)
+		var writer = c.Writer.(*responseWriter)
+
+		var method = c.Request.Method
+		var path = c.Request.URL.Path
+		var rawQuery = c.Request.URL.RawQuery
+		if rawQuery != "" {
+			path = path + "?" + rawQuery
+		}
+
+		logger.Output(1, fmt.Sprintf("| %d | %10s | %8s - %s", writer.status, duration, method, path))
+	}
 }
