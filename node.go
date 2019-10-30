@@ -12,18 +12,18 @@ const (
 	wildcard2 = `([\S]+)`
 )
 
-type treeNodeChain []*treeNode
+type treeNodes []*treeNode
 
-func (this treeNodeChain) Len() int {
-	return len(this)
+func (ts treeNodes) Len() int {
+	return len(ts)
 }
 
-func (this treeNodeChain) Less(i, j int) bool {
-	return this[i].priority < this[j].priority
+func (ts treeNodes) Less(i, j int) bool {
+	return ts[i].priority < ts[j].priority
 }
 
-func (this treeNodeChain) Swap(i, j int) {
-	this[i], this[j] = this[j], this[i]
+func (ts treeNodes) Swap(i, j int) {
+	ts[i], ts[j] = ts[j], ts[i]
 }
 
 type treeNode struct {

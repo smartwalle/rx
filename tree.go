@@ -98,8 +98,8 @@ func (this *methodTree) find(path string, isRegex bool) (nodes []*treeNode) {
 	}
 
 	// 对 nodes 进行排序
-	var nodesChain = treeNodeChain(nodes)
-	sort.Sort(nodesChain)
+	var nNodes = treeNodes(nodes)
+	sort.Sort(nNodes)
 
 	return nodes
 }
