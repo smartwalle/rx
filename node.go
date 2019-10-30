@@ -59,9 +59,11 @@ func (this *treeNode) numOfChildren() int {
 
 func (this *treeNode) children() []*treeNode {
 	this.mu.RLock()
-	var ns = make([]*treeNode, 0, len(this.subNodes))
+	var ns = make([]*treeNode, len(this.subNodes))
+	var index = 0
 	for _, n := range this.subNodes {
-		ns = append(ns, n)
+		ns[index] = n
+		index++
 	}
 	this.mu.RUnlock()
 	return ns
