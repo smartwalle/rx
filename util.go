@@ -15,10 +15,8 @@ func asset(guard bool, text string) {
 }
 
 func splitPath(path string) []string {
+	path = strings.TrimPrefix(path, "/")
 	var ps = strings.Split(path, "/")
-	if firstChar(path) == '/' {
-		return ps[1:]
-	}
 	return ps
 }
 
@@ -29,7 +27,7 @@ func CleanPath(p string) string {
 	if p[0] != '/' {
 		p = "/" + p
 	}
-	p = path.Clean(p)
+	//p = path.Clean(p)
 	return p
 }
 
