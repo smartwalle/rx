@@ -9,20 +9,19 @@ const (
 )
 
 type Context struct {
-	Request  *http.Request
-	Writer   http.ResponseWriter
-	handlers HandlerChain
-	params   Params
-	index    int
-	abort    bool
+	Request       *http.Request
+	Writer        ResponseWriter
+	defaultWriter responseWriter
+	handlers      HandlerChain
+	params        Params
+	index         int
+	abort         bool
 }
 
 func (this *Context) reset(w http.ResponseWriter, req *http.Request) {
 	this.Request = req
-	if this.Writer == nil {
-		this.Writer = &responseWriter{}
-	}
-	this.Writer.(*responseWriter).reset(w)
+	this.defaultWriter.reset(w)
+	this.Writer = &this.defaultWriter
 	this.handlers = nil
 	this.params = nil
 	this.index = -1
@@ -65,8 +64,8 @@ func (this *Context) Render(statusCode int, r Render) {
 	}
 
 	if !bodyAllowedForStatus(statusCode) {
-		var w = this.Writer.(*responseWriter)
-		w.WriteHeaderNow()
+		this.Writer.WriteHeaderNow()
+		return
 	}
 
 	if err := r.Render(this.Writer); err != nil {
@@ -82,5 +81,5 @@ func (this *Context) Param(key string) string {
 	if this.params == nil {
 		return ""
 	}
-	return this.params[key]
+	return this.params.Get(key)
 }

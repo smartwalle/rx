@@ -58,7 +58,7 @@ func Log() HandlerFunc {
 		var endTime = time.Now()
 
 		var duration = endTime.Sub(beginTime)
-		var writer = c.Writer.(*responseWriter)
+		var writer = c.Writer
 
 		var method = c.Request.Method
 		var path = c.Request.URL.Path
@@ -67,6 +67,6 @@ func Log() HandlerFunc {
 			path = path + "?" + rawQuery
 		}
 
-		logger.Output(1, fmt.Sprintf("| %d | %10s | %8s - %s", writer.status, duration, method, path))
+		logger.Output(1, fmt.Sprintf("| %d | %10s | %8s - %s", writer.StatusCode(), duration, method, path))
 	}
 }

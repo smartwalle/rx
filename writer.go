@@ -7,6 +7,18 @@ const (
 	defaultWriteStatus = http.StatusOK
 )
 
+type ResponseWriter interface {
+	http.ResponseWriter
+
+	Writer() http.ResponseWriter
+
+	StatusCode() int
+
+	WriteHeaderNow()
+
+	Written() bool
+}
+
 type responseWriter struct {
 	http.ResponseWriter
 	status int
@@ -17,6 +29,10 @@ func (this *responseWriter) reset(w http.ResponseWriter) {
 	this.ResponseWriter = w
 	this.size = defaultWriteSize
 	this.status = defaultWriteStatus
+}
+
+func (this *responseWriter) Writer() http.ResponseWriter {
+	return this.ResponseWriter
 }
 
 func (this *responseWriter) StatusCode() int {
@@ -38,7 +54,7 @@ func (this *responseWriter) WriteHeaderNow() {
 func (this *responseWriter) Write(b []byte) (n int, err error) {
 	this.WriteHeaderNow()
 	n, err = this.ResponseWriter.Write(b)
-	this.size = n
+	this.size = this.size + n
 	return n, err
 }
 

@@ -99,14 +99,14 @@ func (this *Engine) exec(c *Context, path string, node *treeNode) bool {
 		c.params = params
 		c.handlers = node.handlers
 		c.Next()
-		c.Writer.(*responseWriter).WriteHeaderNow()
+		c.Writer.WriteHeaderNow()
 		return true
 	}
 	return false
 }
 
 func (this *Engine) handleError(c *Context, status int, body []byte) {
-	var w = c.Writer.(*responseWriter)
+	var w = c.Writer
 	w.WriteHeader(status)
 
 	c.Next()
