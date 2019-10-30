@@ -7,64 +7,66 @@ import (
 )
 
 func TestTree_Find(t *testing.T) {
-	var h = HandlerChain{}
-	h = append(h, func(c *Context) {})
+	var handlers = HandlerChain{}
+	handlers = append(handlers, func(c *Context) {})
 
 	var tree = newMethodTree("GET")
-	tree.add("/", h)
-	tree.add("/t1", h)
-	tree.add("/t1/h1", h)
-	tree.add("/t1/h2", h)
-	tree.add("/t2/h1", h)
-	tree.add("/t2/h2", h)
-	tree.add("/t4", h)
-
-	tree.Print()
+	tree.add("/", handlers)
+	tree.add("/t1", handlers)
+	tree.add("/t1/h1", handlers)
+	tree.add("/t1/h2", handlers)
+	tree.add("/t2/h1", handlers)
+	tree.add("/t2/h2", handlers)
+	tree.add("/t4", handlers)
+	tree.add("/t5", nil)
 
 	var tests = []struct {
-		m string
-		p string
-		c int
+		method     string
+		path       string
+		numOfNodes int
 	}{
-		{m: http.MethodGet, p: "/", c: 1},
-		{m: http.MethodGet, p: "/t1", c: 1},
-		{m: http.MethodGet, p: "/t1/h1", c: 1},
-		{m: http.MethodGet, p: "/t1/h2", c: 1},
-		{m: http.MethodGet, p: "/t2/h1", c: 1},
-		{m: http.MethodGet, p: "/t2/h2", c: 1},
-		{m: http.MethodGet, p: "/t4", c: 1},
+		{method: http.MethodGet, path: "/", numOfNodes: 1},
+		{method: http.MethodGet, path: "/t1", numOfNodes: 1},
+		{method: http.MethodGet, path: "/t1/h1", numOfNodes: 1},
+		{method: http.MethodGet, path: "/t1/h2", numOfNodes: 1},
+		{method: http.MethodGet, path: "/t2/h1", numOfNodes: 1},
+		{method: http.MethodGet, path: "/t2/h2", numOfNodes: 1},
+		{method: http.MethodGet, path: "/t4", numOfNodes: 1},
 
-		{m: http.MethodGet, p: "", c: 0},
-		{m: http.MethodGet, p: "//", c: 0},
-		{m: http.MethodGet, p: "/t1/", c: 0},
-		{m: http.MethodGet, p: "/t2", c: 0},
-		{m: http.MethodGet, p: "/t11", c: 0},
-		{m: http.MethodGet, p: "/t3", c: 0},
-		{m: http.MethodGet, p: "/t3/h1", c: 0},
-		{m: http.MethodGet, p: "/t3/h1/", c: 0},
+		{method: http.MethodGet, path: "", numOfNodes: 0},
+		{method: http.MethodGet, path: "//", numOfNodes: 0},
+		{method: http.MethodGet, path: "/t1/", numOfNodes: 0},
+		{method: http.MethodGet, path: "/t2", numOfNodes: 0},
+		{method: http.MethodGet, path: "/t11", numOfNodes: 0},
+		{method: http.MethodGet, path: "/t3", numOfNodes: 0},
+		{method: http.MethodGet, path: "/t3/h1", numOfNodes: 0},
+		{method: http.MethodGet, path: "/t3/h1/", numOfNodes: 0},
+		{method: http.MethodGet, path: "/t5", numOfNodes: 0},
 	}
 
 	for _, test := range tests {
-		if e := tree.find(test.p, false); len(e) != test.c {
-			t.Errorf("%s - %s 的匹配结果应该为 %d, 实际为 %d", test.m, test.p, test.c, len(e))
+		if e := tree.find(test.path, false); len(e) != test.numOfNodes {
+			t.Errorf("%s - %s 的匹配结果应该为 %d, 实际为 %d", test.method, test.path, test.numOfNodes, len(e))
 		}
 	}
 }
 
+func TestTree_FindRegex(t *testing.T) {
+
+}
+
 func TestTree_Clean(t *testing.T) {
-	var h = HandlerChain{}
-	h = append(h, func(c *Context) {})
+	var handlers = HandlerChain{}
+	handlers = append(handlers, func(c *Context) {})
 
 	var tree = newMethodTree("GET")
-	tree.add("/", h)
-	tree.add("/t1", h)
-	tree.add("/t1/h1", h)
-	tree.add("/t1/h2", h)
-	tree.add("/t2/h1", h)
-	tree.add("/t2/h2", h)
-	tree.add("/t4", h)
-
-	tree.Print()
+	tree.add("/", handlers)
+	tree.add("/t1", handlers)
+	tree.add("/t1/h1", handlers)
+	tree.add("/t1/h2", handlers)
+	tree.add("/t2/h1", handlers)
+	tree.add("/t2/h2", handlers)
+	tree.add("/t4", handlers)
 
 	tree.clean("/t2/h1")
 	tree.clean("/t2/h2")
@@ -75,5 +77,5 @@ func TestTree_Clean(t *testing.T) {
 	tree.clean("/")
 
 	fmt.Println("-------------------")
-	tree.Print()
+	tree.print()
 }

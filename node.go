@@ -174,7 +174,7 @@ func (this *treeNode) matchWithRegex(path string) (Params, bool) {
 }
 
 func (this *treeNode) isPath() bool {
-	return len(this.handlers) > 0
+	return len(this.path) > 0 && len(this.handlers) > 0
 }
 
 func (this *treeNode) isValidPath(path string) bool {
@@ -195,12 +195,12 @@ func (this *treeNode) String() string {
 	return fmt.Sprintf("{Depth:%d Key:%s Path:%s}", this.depth, this.key, this.path)
 }
 
-func (this *treeNode) Print() {
+func (this *treeNode) print() {
 	for i := 0; i < this.depth; i++ {
 		fmt.Print("-")
 	}
-	fmt.Println(this.String())
+	fmt.Println(this)
 	for _, c := range this.subNodes {
-		c.Print()
+		c.print()
 	}
 }

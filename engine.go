@@ -70,24 +70,21 @@ func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func (this *Engine) handleHTTPRequest(c *Context) {
 	var method = c.Request.Method
-	var path = cleanPath(c.Request.URL.Path)
+	var path = CleanPath(c.Request.URL.Path)
 
-	var tree = this.getTree(method)
-	if tree != nil {
-		// 先使用完整路径进行匹配
-		var nodes = tree.find(path, false)
-		if len(nodes) > 0 {
-			var node = nodes[0]
+	// 先使用完整路径进行匹配
+	var nodes = this.find(method, path, false)
+	if len(nodes) > 0 {
+		var node = nodes[0]
+		if ok := this.exec(c, path, node); ok {
+			return
+		}
+	} else {
+		// 完整路径匹配失败，则尝试正则匹配
+		nodes = this.find(method, path, true)
+		for _, node := range nodes {
 			if ok := this.exec(c, path, node); ok {
 				return
-			}
-		} else {
-			// 完整路径匹配失败，则尝试正则匹配
-			nodes = tree.find(path, true)
-			for _, node := range nodes {
-				if ok := this.exec(c, path, node); ok {
-					return
-				}
 			}
 		}
 	}

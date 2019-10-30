@@ -22,7 +22,7 @@ func splitPath(path string) []string {
 	return ps
 }
 
-func cleanPath(p string) string {
+func CleanPath(p string) string {
 	if p == "" {
 		return "/"
 	}

@@ -18,8 +18,8 @@ func newMethodTree(method string) *methodTree {
 	return t
 }
 
-func (this *methodTree) Print() {
-	this.root.Print()
+func (this *methodTree) print() {
+	this.root.print()
 }
 
 func (this *methodTree) add(path string, handlers HandlerChain) {

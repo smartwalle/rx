@@ -45,15 +45,13 @@ func newRouterGroup() *RouterGroup {
 	return r
 }
 
-func (this *RouterGroup) Print() {
+func (this *RouterGroup) print() {
 	for _, t := range this.trees {
-		t.Print()
+		t.print()
 	}
 }
 
 func (this *RouterGroup) find(method, path string, isRegex bool) []*treeNode {
-	path = cleanPath(path)
-
 	var tree = this.trees[method]
 	if tree == nil {
 		return nil
@@ -71,7 +69,7 @@ func (this *RouterGroup) Group(path string, handlers ...HandlerFunc) *RouterGrou
 	var r = newRouterGroup()
 	r.engine = this.engine
 	r.trees = this.trees
-	r.basePath = cleanPath(joinPaths(this.basePath, path))
+	r.basePath = CleanPath(joinPaths(this.basePath, path))
 	r.handlers = this.combineHandlers(handlers)
 	return r
 }
@@ -80,7 +78,7 @@ func (this *RouterGroup) Break(method, path string) {
 	var tree = this.trees[method]
 	if tree != nil {
 		asset(path[0] == '/', "path must begin with '/'")
-		path = cleanPath(path)
+		path = CleanPath(path)
 		tree.clean(path)
 	}
 }
@@ -126,7 +124,7 @@ func (this *RouterGroup) Any(path string, handlers ...HandlerFunc) {
 }
 
 func (this *RouterGroup) handle(method, path string, handlers HandlerChain) {
-	path = cleanPath(joinPaths(this.basePath, path))
+	path = CleanPath(joinPaths(this.basePath, path))
 
 	asset(method != "", "HTTP method can not be empty")
 	asset(path[0] == '/', "path must begin with '/'")
