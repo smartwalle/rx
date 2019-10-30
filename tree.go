@@ -133,7 +133,7 @@ func (this *methodTree) clean(path string) {
 
 	if node != nil {
 		// 将该节点重置
-		node.reset()
+		node.unprepare()
 		// 清理节点链路，移除无效的节点
 		var nodeLen = len(nodes)
 		for i := nodeLen - 1; i >= 0; i-- {

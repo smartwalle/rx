@@ -49,13 +49,6 @@ func newPathNode(key string, depth, priority int) *treeNode {
 	return n
 }
 
-func (this *treeNode) reset() {
-	this.path = ""
-	this.handlers = nil
-	this.regex = nil
-	this.paramNames = nil
-}
-
 func (this *treeNode) numOfChildren() int {
 	this.mu.RLock()
 	var l = len(this.subNodes)
@@ -141,6 +134,13 @@ func (this *treeNode) prepare(path string, handlers HandlerChain) {
 	}
 }
 
+func (this *treeNode) unprepare() {
+	this.path = ""
+	this.handlers = nil
+	this.regex = nil
+	this.paramNames = nil
+}
+
 func (this *treeNode) match(path string) (Params, bool) {
 	if this.regex != nil {
 		return this.matchWithRegex(path)
@@ -192,7 +192,7 @@ func (this *treeNode) isValidRegexPath() bool {
 }
 
 func (this *treeNode) String() string {
-	return fmt.Sprintf("{Depth:%d Key:%s Path:%s}", this.depth, this.key, this.path)
+	return fmt.Sprintf("{Depth:%d, Key:%s, Path:%s, isPath:%t}", this.depth, this.key, this.path, this.isPath())
 }
 
 func (this *treeNode) print() {

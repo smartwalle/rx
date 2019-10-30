@@ -1,7 +1,6 @@
 package rx
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -49,7 +48,6 @@ func TestNode_Match(t *testing.T) {
 		n.prepare(test.path, handlers)
 
 		var params, ok = n.match(test.testPath)
-		fmt.Println(params)
 		if ok != test.match || len(params) != test.numOfParams {
 			t.Errorf("%s - %s 的匹配结果应该为 %t - %d, 实际为 %t - %d", test.path, test.testPath, test.match, test.numOfParams, ok, len(params))
 		}
