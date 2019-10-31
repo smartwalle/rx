@@ -1,6 +1,7 @@
 package rx
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 )
@@ -72,36 +73,12 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 	var method = c.Request.Method
 	var path = CleanPath(c.Request.URL.Path)
 
-	// 先使用完整路径进行匹配
-	c.nodes = this.find(method, path, false, c.nodes)
-	if len(c.nodes) > 0 {
-		if ok := this.exec(c, path, c.nodes[0]); ok {
-			return
-		}
-	} else {
-		// 完整路径匹配失败，则尝试正则匹配
-		c.nodes = this.find(method, path, true, c.nodes)
-		for _, node := range c.nodes {
-			if ok := this.exec(c, path, node); ok {
-				return
-			}
-		}
-	}
+	// TODO 查找
+	fmt.Println(method, path)
 
 	// 匹配失败，返回 404 错误
 	c.handlers = this.allNoRoute
 	this.handleError(c, http.StatusNotFound, default404Body)
-}
-
-func (this *Engine) exec(c *Context, path string, node *treeNode) bool {
-	if params, ok := node.match(path, c.params); ok {
-		c.params = params
-		c.handlers = node.handlers
-		c.Next()
-		c.Writer.WriteHeaderNow()
-		return true
-	}
-	return false
 }
 
 func (this *Engine) handleError(c *Context, status int, body []byte) {

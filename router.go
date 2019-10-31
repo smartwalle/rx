@@ -32,7 +32,7 @@ type Router interface {
 
 type RouterGroup struct {
 	engine   *Engine
-	trees    map[string]*methodTree
+	trees    methodTrees
 	basePath string
 	handlers []HandlerFunc
 	isRoot   bool
@@ -40,24 +40,16 @@ type RouterGroup struct {
 
 func newRouterGroup() *RouterGroup {
 	var r = &RouterGroup{}
-	r.trees = make(map[string]*methodTree)
+	r.trees = make(methodTrees, 0, 8)
 	r.basePath = "/"
 	return r
 }
 
 func (this *RouterGroup) print() {
 	for _, t := range this.trees {
-		t.print()
+		// TODO print
+		fmt.Println(t)
 	}
-}
-
-func (this *RouterGroup) find(method, path string, isRegex bool, nodes treeNodes) treeNodes {
-	var tree = this.trees[method]
-	if tree == nil {
-		return nil
-	}
-
-	return tree.find(path, isRegex, nodes)
 }
 
 func (this *RouterGroup) Use(handlers ...HandlerFunc) Router {
@@ -75,11 +67,11 @@ func (this *RouterGroup) Group(path string, handlers ...HandlerFunc) *RouterGrou
 }
 
 func (this *RouterGroup) Break(method, path string) {
-	var tree = this.trees[method]
+	var tree = this.trees.get(method)
 	if tree != nil {
 		asset(path[0] == '/', "path must begin with '/'")
 		path = CleanPath(path)
-		tree.clean(path)
+		// TODO break
 	}
 }
 
@@ -134,18 +126,14 @@ func (this *RouterGroup) handle(method, path string, handlers HandlerChain) {
 
 	var nHandlers = this.combineHandlers(handlers)
 
-	var tree = this.trees[method]
+	var tree = this.trees.get(method)
 	if tree == nil {
 		tree = newMethodTree(method)
-		this.trees[method] = tree
+		this.trees = append(this.trees, tree)
 	}
-	tree.add(path, nHandlers)
+	tree.root.add(path, nHandlers)
 
 	logger.Output(3, fmt.Sprintf("%-8s %-30s --> %s (%d handlers)\n", method, path, nameOfFunction(nHandlers.Last()), nHandlers.Len()))
-}
-
-func (this *RouterGroup) getTree(method string) *methodTree {
-	return this.trees[method]
 }
 
 func (this *RouterGroup) combineHandlers(handlers HandlerChain) HandlerChain {

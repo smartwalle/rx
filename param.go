@@ -7,11 +7,11 @@ type Param struct {
 
 type Params []Param
 
-func (ps Params) Get(key string) string {
+func (ps Params) Get(key string) (string, bool) {
 	for _, p := range ps {
 		if p.key == key {
-			return p.value
+			return p.value, true
 		}
 	}
-	return ""
+	return "", false
 }
