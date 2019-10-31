@@ -1,7 +1,6 @@
 package rx
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -43,13 +42,6 @@ func newRouterGroup() *RouterGroup {
 	r.trees = make(methodTrees, 0, 8)
 	r.basePath = "/"
 	return r
-}
-
-func (this *RouterGroup) print() {
-	for _, t := range this.trees {
-		// TODO print
-		fmt.Println(t)
-	}
 }
 
 func (this *RouterGroup) Use(handlers ...HandlerFunc) Router {
@@ -116,24 +108,10 @@ func (this *RouterGroup) Any(path string, handlers ...HandlerFunc) {
 }
 
 func (this *RouterGroup) handle(method, path string, handlers HandlerChain) {
-	path = CleanPath(joinPaths(this.basePath, path))
-
-	asset(method != "", "HTTP method can not be empty")
-	asset(path[0] == '/', "path must begin with '/'")
-	asset(len(handlers) > 0, "there must be at least one handler")
-
 	method = strings.ToUpper(method)
-
+	path = CleanPath(joinPaths(this.basePath, path))
 	var nHandlers = this.combineHandlers(handlers)
-
-	var tree = this.trees.get(method)
-	if tree == nil {
-		tree = newMethodTree(method)
-		this.trees = append(this.trees, tree)
-	}
-	tree.root.add(path, nHandlers)
-
-	logger.Output(3, fmt.Sprintf("%-8s %-30s --> %s (%d handlers)\n", method, path, nameOfFunction(nHandlers.Last()), nHandlers.Len()))
+	this.engine.addRoute(method, path, nHandlers)
 }
 
 func (this *RouterGroup) combineHandlers(handlers HandlerChain) HandlerChain {

@@ -8,6 +8,7 @@ import (
 
 func main() {
 	var s = rx.New()
+	s.Use(rx.Log())
 	s.Use(func(c *rx.Context) {
 		fmt.Fprintln(c.Writer, "global m1")
 	})
@@ -41,10 +42,6 @@ func main() {
 	})
 	order.GET("/list", func(c *rx.Context) {
 		fmt.Fprintln(c.Writer, "order list")
-	})
-	order.GET("/:id", func(c *rx.Context) {
-		fmt.Fprintln(c.Writer, "order detail")
-		fmt.Fprintln(c.Writer, "order id", c.Param("id"))
 	})
 
 	// point

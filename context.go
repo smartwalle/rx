@@ -11,17 +11,21 @@ const (
 type Context struct {
 	Request       *http.Request
 	Writer        ResponseWriter
-	defaultWriter responseWriter
+	defaultWriter *responseWriter
 	handlers      HandlerChain
 	params        Params
 	index         int
 	abort         bool
 }
 
+func newContext() *Context {
+	return &Context{defaultWriter: &responseWriter{}}
+}
+
 func (this *Context) reset(w http.ResponseWriter, req *http.Request) {
 	this.Request = req
 	this.defaultWriter.reset(w)
-	this.Writer = &this.defaultWriter
+	this.Writer = this.defaultWriter
 	this.handlers = nil
 	this.params = this.params[0:0]
 	this.index = -1
@@ -31,8 +35,7 @@ func (this *Context) reset(w http.ResponseWriter, req *http.Request) {
 func (this *Context) Next() {
 	this.index++
 	for !this.abort && this.index < len(this.handlers) {
-		var handler = this.handlers[this.index]
-		handler(this)
+		this.handlers[this.index](this)
 		this.index++
 	}
 }
@@ -77,9 +80,6 @@ func (this *Context) Params() Params {
 	return this.params
 }
 
-func (this *Context) Param(key string) (string, bool) {
-	if this.params == nil {
-		return "", false
-	}
-	return this.params.Get(key)
+func (this *Context) Param(key string) string {
+	return this.params.ByName(key)
 }
