@@ -383,6 +383,7 @@ func (n *node) insertChild(numParams uint8, path string, fullPath string, handle
 
 // nodeValue holds return values of (*Node).getValue method
 type nodeValue struct {
+	node     *node
 	handlers HandlerChain
 	params   Params
 	tsr      bool
@@ -462,6 +463,7 @@ walk: // Outer loop for walking the tree
 
 					if value.handlers = n.handlers; value.handlers != nil {
 						value.fullPath = n.fullPath
+						value.node = n
 						return
 					}
 					if len(n.children) == 1 {
@@ -492,6 +494,7 @@ walk: // Outer loop for walking the tree
 
 					value.handlers = n.handlers
 					value.fullPath = n.fullPath
+					value.node = n
 					return
 
 				default:
@@ -503,6 +506,7 @@ walk: // Outer loop for walking the tree
 			// Check if this node has a handle registered.
 			if value.handlers = n.handlers; value.handlers != nil {
 				value.fullPath = n.fullPath
+				value.node = n
 				return
 			}
 

@@ -77,6 +77,23 @@ func (this *Engine) addRoute(method, path string, handlers HandlerChain) {
 	logger.Output(3, fmt.Sprintf("%-8s %-30s --> %s (%d handlers)\n", method, path, nameOfFunction(handlers.Last()), handlers.Len()))
 }
 
+func (this *Engine) breakRoute(method, path string) {
+	asset(method != "", "HTTP method can not be empty")
+	asset(path[0] == '/', "path must begin with '/'")
+
+	for i := 0; i < len(this.trees); i++ {
+		if this.trees[i].method != method {
+			continue
+		}
+		var root = this.trees[i].root
+		var value = root.getValue(path, nil, true)
+
+		if value.node != nil {
+			value.node.handlers = nil
+		}
+	}
+}
+
 func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	var c = this.pool.Get().(*Context)
 	c.reset(w, req)
@@ -96,7 +113,7 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 		}
 
 		var root = this.trees[i].root
-		value := root.getValue(path, c.params, true)
+		var value = root.getValue(path, c.params, true)
 		if value.handlers != nil {
 			c.handlers = value.handlers
 			c.params = value.params

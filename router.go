@@ -59,12 +59,9 @@ func (this *RouterGroup) Group(path string, handlers ...HandlerFunc) *RouterGrou
 }
 
 func (this *RouterGroup) Break(method, path string) {
-	var tree = this.trees.get(method)
-	if tree != nil {
-		asset(path[0] == '/', "path must begin with '/'")
-		path = CleanPath(path)
-		// TODO break
-	}
+	method = strings.ToUpper(method)
+	path = CleanPath(path)
+	this.engine.breakRoute(method, path)
 }
 
 func (this *RouterGroup) GET(path string, handlers ...HandlerFunc) {
