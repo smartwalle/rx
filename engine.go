@@ -86,7 +86,7 @@ func (this *Engine) breakRoute(method, path string) {
 			continue
 		}
 		var root = this.trees[i].root
-		var value = root.getValue(path, nil, true)
+		var value = root.getValue(path, nil, false)
 
 		if value.node != nil {
 			value.node.handlers = nil
@@ -107,13 +107,15 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 	var method = c.Request.Method
 	var path = CleanPath(c.Request.URL.Path)
 
-	for i := 0; i < len(this.trees); i++ {
-		if this.trees[i].method != method {
+	var ts = this.trees
+	var tl = len(ts)
+	for i := 0; i < tl; i++ {
+		if ts[i].method != method {
 			continue
 		}
 
-		var root = this.trees[i].root
-		var value = root.getValue(path, c.params, true)
+		var root = ts[i].root
+		var value = root.getValue(path, c.params, false)
 		if value.handlers != nil {
 			c.handlers = value.handlers
 			c.params = value.params
