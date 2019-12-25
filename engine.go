@@ -33,6 +33,9 @@ type Engine struct {
 
 	allNoRoute HandlersChain
 	noRoute    HandlersChain
+
+	allNoMethod HandlersChain
+	noMethod    HandlersChain
 }
 
 func New() *Engine {
@@ -48,6 +51,7 @@ func New() *Engine {
 func (this *Engine) Use(handlers ...HandlerFunc) Router {
 	this.RouterGroup.Use(handlers...)
 	this.rebuild404Handlers()
+	this.rebuild405Handlers()
 	return this
 }
 
@@ -56,8 +60,17 @@ func (this *Engine) NoRoute(handlers ...HandlerFunc) {
 	this.rebuild404Handlers()
 }
 
+func (this *Engine) NoMethod(handlers ...HandlerFunc) {
+	this.noMethod = handlers
+	this.rebuild405Handlers()
+}
+
 func (this *Engine) rebuild404Handlers() {
 	this.allNoRoute = this.combineHandlers(this.noRoute)
+}
+
+func (this *Engine) rebuild405Handlers() {
+	this.allNoMethod = this.combineHandlers(this.noMethod)
 }
 
 func (this *Engine) addRoute(method, path string, handlers HandlersChain) {
@@ -139,6 +152,23 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 			c.Next()
 			c.Writer.WriteHeaderNow()
 			return
+		}
+	}
+
+	// 匹配 405 错误
+	if len(this.noMethod) > 0 {
+		for i := 0; i < tl; i++ {
+			if ts[i].method == method {
+				continue
+			}
+
+			var root = ts[i].root
+			var value = root.getValue(path, c.params, false)
+			if value.handlers != nil {
+				c.handlers = this.allNoMethod
+				this.handleError(c, http.StatusMethodNotAllowed, default405Body)
+				return
+			}
 		}
 	}
 
