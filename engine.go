@@ -13,16 +13,16 @@ var (
 
 type HandlerFunc func(c *Context)
 
-type HandlerChain []HandlerFunc
+type HandlersChain []HandlerFunc
 
-func (this HandlerChain) Last() HandlerFunc {
+func (this HandlersChain) Last() HandlerFunc {
 	if l := len(this); l > 0 {
 		return this[l-1]
 	}
 	return nil
 }
 
-func (this HandlerChain) Len() int {
+func (this HandlersChain) Len() int {
 	return len(this)
 }
 
@@ -31,14 +31,13 @@ type Engine struct {
 	pool  sync.Pool
 	trees methodTrees
 
-	allNoRoute HandlerChain
-	noRoute    HandlerChain
+	allNoRoute HandlersChain
+	noRoute    HandlersChain
 }
 
 func New() *Engine {
 	var e = &Engine{}
 	e.RouterGroup = newRouterGroup()
-	e.RouterGroup.isRoot = true
 	e.RouterGroup.engine = e
 	e.pool.New = func() interface{} {
 		return newContext()
@@ -61,7 +60,7 @@ func (this *Engine) rebuild404Handlers() {
 	this.allNoRoute = this.combineHandlers(this.noRoute)
 }
 
-func (this *Engine) addRoute(method, path string, handlers HandlerChain) {
+func (this *Engine) addRoute(method, path string, handlers HandlersChain) {
 	asset(method != "", "HTTP method can not be empty")
 	asset(path[0] == '/', "path must begin with '/'")
 	asset(len(handlers) > 0, "there must be at least one handler")
@@ -86,12 +85,30 @@ func (this *Engine) breakRoute(method, path string) {
 			continue
 		}
 		var root = this.trees[i].root
-		var value = root.getValue(path, nil, false)
+		var node = root.getNode(path)
 
-		if value.node != nil {
-			value.node.handlers = nil
+		if node != nil {
+			node.handlers = nil
 		}
 	}
+}
+
+func (this *Engine) hasRouter(method, path string) bool {
+	asset(method != "", "HTTP method can not be empty")
+	asset(path[0] == '/', "path must begin with '/'")
+
+	for i := 0; i < len(this.trees); i++ {
+		if this.trees[i].method != method {
+			continue
+		}
+		var root = this.trees[i].root
+		var node = root.getNode(path)
+
+		if node != nil && len(node.handlers) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {

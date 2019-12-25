@@ -12,7 +12,7 @@ type Context struct {
 	Request       *http.Request
 	Writer        ResponseWriter
 	defaultWriter *responseWriter
-	handlers      HandlerChain
+	handlers      HandlersChain
 	params        Params
 	index         int
 	abort         bool

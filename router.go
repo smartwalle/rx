@@ -12,6 +12,8 @@ type Router interface {
 
 	Break(method, path string)
 
+	HasRouter(method, path string) bool
+
 	GET(path string, handlers ...HandlerFunc)
 
 	HEAD(path string, handlers ...HandlerFunc)
@@ -31,28 +33,24 @@ type Router interface {
 
 type RouterGroup struct {
 	engine   *Engine
-	trees    methodTrees
 	basePath string
 	handlers []HandlerFunc
-	isRoot   bool
 }
 
 func newRouterGroup() *RouterGroup {
 	var r = &RouterGroup{}
-	r.trees = make(methodTrees, 0, 8)
 	r.basePath = "/"
 	return r
 }
 
 func (this *RouterGroup) Use(handlers ...HandlerFunc) Router {
 	this.handlers = append(this.handlers, handlers...)
-	return this.returnObj()
+	return this
 }
 
 func (this *RouterGroup) Group(path string, handlers ...HandlerFunc) *RouterGroup {
 	var r = newRouterGroup()
 	r.engine = this.engine
-	r.trees = this.trees
 	r.basePath = CleanPath(joinPaths(this.basePath, path))
 	r.handlers = this.combineHandlers(handlers)
 	return r
@@ -62,6 +60,12 @@ func (this *RouterGroup) Break(method, path string) {
 	method = strings.ToUpper(method)
 	path = CleanPath(path)
 	this.engine.breakRoute(method, path)
+}
+
+func (this *RouterGroup) HasRouter(method, path string) bool {
+	method = strings.ToUpper(method)
+	path = CleanPath(path)
+	return this.engine.hasRouter(method, path)
 }
 
 func (this *RouterGroup) GET(path string, handlers ...HandlerFunc) {
@@ -104,21 +108,21 @@ func (this *RouterGroup) Any(path string, handlers ...HandlerFunc) {
 	this.handle(http.MethodTrace, path, handlers)
 }
 
-func (this *RouterGroup) handle(method, path string, handlers HandlerChain) {
+func (this *RouterGroup) handle(method, path string, handlers HandlersChain) {
 	method = strings.ToUpper(method)
 	path = CleanPath(joinPaths(this.basePath, path))
 	var nHandlers = this.combineHandlers(handlers)
 	this.engine.addRoute(method, path, nHandlers)
 }
 
-func (this *RouterGroup) combineHandlers(handlers HandlerChain) HandlerChain {
+func (this *RouterGroup) combineHandlers(handlers HandlersChain) HandlersChain {
 	var hLen1 = len(this.handlers)
 	var hLen2 = len(handlers)
 	if hLen1 == 0 && hLen2 == 0 {
 		return nil
 	}
 
-	var nHandlers = make(HandlerChain, len(this.handlers)+len(handlers))
+	var nHandlers = make(HandlersChain, len(this.handlers)+len(handlers))
 	if hLen1 > 0 {
 		copy(nHandlers, this.handlers)
 	}
@@ -126,11 +130,4 @@ func (this *RouterGroup) combineHandlers(handlers HandlerChain) HandlerChain {
 		copy(nHandlers[hLen1:], handlers)
 	}
 	return nHandlers
-}
-
-func (this *RouterGroup) returnObj() Router {
-	if this.isRoot {
-		return this.engine
-	}
-	return this
 }
