@@ -106,7 +106,7 @@ func (this *Engine) breakRoute(method, path string) {
 	}
 }
 
-func (this *Engine) hasRouter(method, path string) bool {
+func (this *Engine) existRoute(method, path string) bool {
 	asset(method != "", "HTTP method can not be empty")
 	asset(path[0] == '/', "path must begin with '/'")
 

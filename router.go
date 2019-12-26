@@ -12,7 +12,7 @@ type Router interface {
 
 	Break(method, path string)
 
-	HasRouter(method, path string) bool
+	Exist(method, path string) bool
 
 	GET(path string, handlers ...HandlerFunc)
 
@@ -62,10 +62,10 @@ func (this *RouterGroup) Break(method, path string) {
 	this.engine.breakRoute(method, path)
 }
 
-func (this *RouterGroup) HasRouter(method, path string) bool {
+func (this *RouterGroup) Exist(method, path string) bool {
 	method = strings.ToUpper(method)
 	path = CleanPath(path)
-	return this.engine.hasRouter(method, path)
+	return this.engine.existRoute(method, path)
 }
 
 func (this *RouterGroup) GET(path string, handlers ...HandlerFunc) {
