@@ -67,6 +67,6 @@ func Log() HandlerFunc {
 			path = path + "?" + rawQuery
 		}
 
-		logger.Output(1, fmt.Sprintf("| %d | %10s | %8s - %s", writer.StatusCode(), duration, method, path))
+		logger.Output(1, fmt.Sprintf("| %d | %10s | %8s - %s", writer.Status(), duration, method, path))
 	}
 }
