@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	contentType = "Content-Type"
+	kContentType = "Content-Type"
 )
 
 type Context struct {
@@ -54,6 +54,10 @@ func (this *Context) Write(statusCode int, b []byte) {
 	this.Writer.Write(b)
 }
 
+func (this *Context) JSON(statusCode int, obj interface{}) {
+	this.Render(statusCode, JSONRender{data: obj})
+}
+
 func (this *Context) Render(statusCode int, r Render) {
 	if r == nil {
 		return
@@ -62,8 +66,8 @@ func (this *Context) Render(statusCode int, r Render) {
 	this.Writer.WriteHeader(statusCode)
 
 	var header = this.Writer.Header()
-	if val := header[contentType]; len(val) == 0 {
-		header[contentType] = r.ContentType()
+	if val := header[kContentType]; len(val) == 0 {
+		header[kContentType] = r.ContentType()
 	}
 
 	if !bodyAllowedForStatus(statusCode) {
