@@ -150,12 +150,12 @@ func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	var c = this.pool.Get().(*Context)
 	c.reset(w, req)
 
-	this.handleHTTPRequest(c)
+	this.handleRequest(c)
 
 	this.pool.Put(c)
 }
 
-func (this *Engine) handleHTTPRequest(c *Context) {
+func (this *Engine) handleRequest(c *Context) {
 	var method = c.Request.Method
 	var path = c.Request.URL.Path
 
@@ -169,15 +169,28 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 		var root = ts[i].root
 		var value = root.getValue(path, c.params, false)
 		if value.route != nil {
+			var target, err = value.route.balancer.Pick(c.Request)
+			// 502 错误
+			if err != nil {
+				this.handleError(c, http.StatusBadGateway, []byte(fmt.Sprintf("%s: %s", http.StatusText(http.StatusBadGateway), err.Error())))
+				return
+			}
+			// 503 错误
+			if target == nil {
+				this.handleError(c, http.StatusServiceUnavailable, []byte(http.StatusText(http.StatusServiceUnavailable)))
+				return
+			}
+
+			c.target = target
 			c.handlers = value.route.handlers
-			c.balancer = value.route.balancer
 			c.params = value.params
+
 			c.exec()
 			return
 		}
 	}
 
-	// 匹配 405 错误
+	// 405 错误
 	if len(this.noMethod) > 0 {
 		for i := 0; i < tl; i++ {
 			if ts[i].method == method {
@@ -194,7 +207,7 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 		}
 	}
 
-	// 匹配失败，返回 404 错误
+	// 404 错误
 	c.handlers = this.allNoRoute
 	this.handleError(c, http.StatusNotFound, default404Body)
 }
