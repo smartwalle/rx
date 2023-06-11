@@ -2,6 +2,7 @@ package rx
 
 import (
 	"fmt"
+	"github.com/smartwalle/rx/balancer"
 	"github.com/smartwalle/rx/balancer/roundrobin"
 	"net/http"
 	"net/url"
@@ -28,6 +29,8 @@ type Engine struct {
 	pool  sync.Pool
 	trees methodTrees
 
+	balancerBuilders map[string]balancer.Builder
+
 	allNotFound HandlersChain
 	notFound    HandlersChain
 
@@ -48,6 +51,9 @@ func New() *Engine {
 	e.pool.New = func() interface{} {
 		return newContext()
 	}
+	e.balancerBuilders = make(map[string]balancer.Builder)
+
+	e.RegisterBalancer(roundrobin.New())
 	return e
 }
 
@@ -58,6 +64,19 @@ func (this *Engine) Use(handlers ...HandlerFunc) Router {
 	this.rebuild502Handlers()
 	this.rebuild503Handlers()
 	return this
+}
+
+func (this *Engine) RegisterBalancer(builder balancer.Builder) {
+	if builder != nil && builder.Name() != "" {
+		this.balancerBuilders[builder.Name()] = builder
+	}
+}
+
+func (this *Engine) GetBalancer(name string) balancer.Builder {
+	if name == "" {
+		name = roundrobin.Name
+	}
+	return this.balancerBuilders[name]
 }
 
 func (this *Engine) NotFound(handlers ...HandlerFunc) {
@@ -118,7 +137,7 @@ func (this *Engine) addRoute(method, path string, targets []string, handlers Han
 		nTargets = append(nTargets, nURL)
 	}
 
-	var balancer, err = (&roundrobin.Builder{}).Build(nTargets)
+	var balancer, err = this.GetBalancer("").Build(nTargets)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -204,11 +223,15 @@ func (this *Engine) handleRequest(c *Context) {
 				return
 			}
 
-			c.target = target
 			c.handlers = value.route.handlers
 			c.params = value.params
 
-			c.exec()
+			c.Next()
+			if !c.abort {
+				c.Request.URL.Path = CleanPath(c.Request.URL.Path)
+				target.ServeHTTP(c.Writer, c.Request)
+			}
+			c.Writer.WriteHeaderNow()
 			return
 		}
 	}

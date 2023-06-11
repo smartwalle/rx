@@ -9,14 +9,22 @@ import (
 	"sync"
 )
 
-type Builder struct {
+const (
+	Name = "round_robin"
+)
+
+func New() balancer.Builder {
+	return &rrBuilder{}
 }
 
-func (this *Builder) Name() string {
-	return "round-robin"
+type rrBuilder struct {
 }
 
-func (this *Builder) Build(targets []*url.URL) (balancer.Balancer, error) {
+func (this *rrBuilder) Name() string {
+	return Name
+}
+
+func (this *rrBuilder) Build(targets []*url.URL) (balancer.Balancer, error) {
 	if len(targets) == 0 {
 		return nil, errors.New("no targets is available")
 	}

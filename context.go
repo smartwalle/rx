@@ -2,7 +2,6 @@ package rx
 
 import (
 	"net/http"
-	"net/http/httputil"
 )
 
 const (
@@ -16,7 +15,6 @@ type Context struct {
 	index         int
 	abort         bool
 
-	target   *httputil.ReverseProxy
 	handlers HandlersChain
 	params   Params
 }
@@ -32,7 +30,6 @@ func (this *Context) reset(w http.ResponseWriter, req *http.Request) {
 	this.index = -1
 	this.abort = false
 
-	this.target = nil
 	this.handlers = nil
 	this.params = this.params[0:0]
 }
@@ -91,13 +88,4 @@ func (this *Context) Params() Params {
 
 func (this *Context) Param(key string) string {
 	return this.params.ByName(key)
-}
-
-func (this *Context) exec() {
-	this.Next()
-	if !this.abort {
-		this.Request.URL.Path = CleanPath(this.Request.URL.Path)
-		this.target.ServeHTTP(this.Writer, this.Request)
-	}
-	this.Writer.WriteHeaderNow()
 }
