@@ -25,6 +25,7 @@ import (
 
 func main() {
 	var s = rx.New()
+
 	s.GET("/test/*dd", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"}, func(c *rx.Context) {
 		c.Next()
 	})

@@ -14,7 +14,7 @@ func main() {
 	s.GET("/world", func(c *rx.Context) {
 		c.Write(http.StatusOK, []byte(c.Request.URL.Path))
 	})
-	s.NoRoute(func(c *rx.Context) {
+	s.NotFound(func(c *rx.Context) {
 		c.Writer.Write([]byte("什么?"))
 	})
 

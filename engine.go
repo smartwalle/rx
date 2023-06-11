@@ -8,11 +8,6 @@ import (
 	"sync"
 )
 
-var (
-	default404Body = []byte("404 page not found")
-	default405Body = []byte("405 method not allowed")
-)
-
 type HandlerFunc func(c *Context)
 
 type HandlersChain []HandlerFunc
@@ -33,11 +28,17 @@ type Engine struct {
 	pool  sync.Pool
 	trees methodTrees
 
-	allNoRoute HandlersChain
-	noRoute    HandlersChain
+	allNotFound HandlersChain
+	notFound    HandlersChain
 
-	allNoMethod HandlersChain
-	noMethod    HandlersChain
+	allMethodNotAllowed HandlersChain
+	methodNotAllowed    HandlersChain
+
+	allBadGateway HandlersChain
+	badGateway    HandlersChain
+
+	allServiceUnavailable HandlersChain
+	serviceUnavailable    HandlersChain
 }
 
 func New() *Engine {
@@ -54,25 +55,45 @@ func (this *Engine) Use(handlers ...HandlerFunc) Router {
 	this.RouterGroup.Use(handlers...)
 	this.rebuild404Handlers()
 	this.rebuild405Handlers()
+	this.rebuild502Handlers()
+	this.rebuild503Handlers()
 	return this
 }
 
-func (this *Engine) NoRoute(handlers ...HandlerFunc) {
-	this.noRoute = handlers
+func (this *Engine) NotFound(handlers ...HandlerFunc) {
+	this.notFound = handlers
 	this.rebuild404Handlers()
 }
 
-func (this *Engine) NoMethod(handlers ...HandlerFunc) {
-	this.noMethod = handlers
+func (this *Engine) MethodNotAllowed(handlers ...HandlerFunc) {
+	this.methodNotAllowed = handlers
 	this.rebuild405Handlers()
 }
 
+func (this *Engine) BadGateway(handlers ...HandlerFunc) {
+	this.badGateway = handlers
+	this.rebuild502Handlers()
+}
+
+func (this *Engine) ServiceUnavailable(handlers ...HandlerFunc) {
+	this.serviceUnavailable = handlers
+	this.rebuild503Handlers()
+}
+
 func (this *Engine) rebuild404Handlers() {
-	this.allNoRoute = this.combineHandlers(this.noRoute)
+	this.allNotFound = this.combineHandlers(this.notFound)
 }
 
 func (this *Engine) rebuild405Handlers() {
-	this.allNoMethod = this.combineHandlers(this.noMethod)
+	this.allMethodNotAllowed = this.combineHandlers(this.methodNotAllowed)
+}
+
+func (this *Engine) rebuild502Handlers() {
+	this.allBadGateway = this.combineHandlers(this.badGateway)
+}
+
+func (this *Engine) rebuild503Handlers() {
+	this.allServiceUnavailable = this.combineHandlers(this.serviceUnavailable)
 }
 
 func (this *Engine) addRoute(method, path string, targets []string, handlers HandlersChain) {
@@ -172,12 +193,14 @@ func (this *Engine) handleRequest(c *Context) {
 			var target, err = value.route.balancer.Pick(c.Request)
 			// 502 错误
 			if err != nil {
-				this.handleError(c, http.StatusBadGateway, []byte(fmt.Sprintf("%s: %s", http.StatusText(http.StatusBadGateway), err.Error())))
+				c.handlers = this.allBadGateway
+				this.handleError(c, http.StatusBadGateway, fmt.Sprintf("%s: %s", http.StatusText(http.StatusBadGateway), err.Error()))
 				return
 			}
 			// 503 错误
 			if target == nil {
-				this.handleError(c, http.StatusServiceUnavailable, []byte(http.StatusText(http.StatusServiceUnavailable)))
+				c.handlers = this.allServiceUnavailable
+				this.handleError(c, http.StatusServiceUnavailable, http.StatusText(http.StatusServiceUnavailable))
 				return
 			}
 
@@ -191,7 +214,7 @@ func (this *Engine) handleRequest(c *Context) {
 	}
 
 	// 405 错误
-	if len(this.noMethod) > 0 {
+	if len(this.methodNotAllowed) > 0 {
 		for i := 0; i < tl; i++ {
 			if ts[i].method == method {
 				continue
@@ -200,19 +223,19 @@ func (this *Engine) handleRequest(c *Context) {
 			var root = ts[i].root
 			var value = root.getValue(path, c.params, false)
 			if value.route != nil {
-				c.handlers = this.allNoMethod
-				this.handleError(c, http.StatusMethodNotAllowed, default405Body)
+				c.handlers = this.allMethodNotAllowed
+				this.handleError(c, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 				return
 			}
 		}
 	}
 
 	// 404 错误
-	c.handlers = this.allNoRoute
-	this.handleError(c, http.StatusNotFound, default404Body)
+	c.handlers = this.allNotFound
+	this.handleError(c, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
-func (this *Engine) handleError(c *Context, status int, body []byte) {
+func (this *Engine) handleError(c *Context, status int, body string) {
 	var w = c.Writer
 	w.WriteHeader(status)
 
@@ -222,5 +245,5 @@ func (this *Engine) handleError(c *Context, status int, body []byte) {
 		return
 	}
 
-	w.Write(body)
+	w.WriteString(body)
 }

@@ -15,7 +15,7 @@ func main() {
 	s.Use(func(c *rx.Context) {
 		fmt.Fprintln(c.Writer, "global m2")
 	})
-	s.NoRoute(func(c *rx.Context) {
+	s.NotFound(func(c *rx.Context) {
 		fmt.Fprintln(c.Writer, "not found")
 	})
 
