@@ -2,7 +2,9 @@ package rx
 
 import (
 	"fmt"
+	"github.com/smartwalle/rx/balancer/roundrobin"
 	"net/http"
+	"net/url"
 	"sync"
 )
 
@@ -73,10 +75,10 @@ func (this *Engine) rebuild405Handlers() {
 	this.allNoMethod = this.combineHandlers(this.noMethod)
 }
 
-func (this *Engine) addRoute(method, path string, handlers HandlersChain) {
+func (this *Engine) addRoute(method, path string, targets []string, handlers HandlersChain) {
 	asset(method != "", "HTTP method can not be empty")
 	asset(path[0] == '/', "path must begin with '/'")
-	asset(len(handlers) > 0, "there must be at least one handler")
+	asset(len(targets) > 0, "there must be at least one target")
 
 	var root = this.trees.get(method)
 	if root == nil {
@@ -84,7 +86,27 @@ func (this *Engine) addRoute(method, path string, handlers HandlersChain) {
 		root.fullPath = "/"
 		this.trees = append(this.trees, methodTree{method: method, root: root})
 	}
-	root.addRoute(path, handlers)
+
+	var nTargets = make([]*url.URL, 0, len(targets))
+
+	for _, target := range targets {
+		var nURL, err = url.Parse(target)
+		if err != nil {
+			panic(err.Error())
+		}
+		nTargets = append(nTargets, nURL)
+	}
+
+	var balancer, err = (&roundrobin.Builder{}).Build(nTargets)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	var route = &Route{}
+	route.handlers = handlers
+	route.balancer = balancer
+
+	root.addRoute(path, route)
 
 	logger.Output(3, fmt.Sprintf("%-8s %-30s --> %s (%d handlers)\n", method, path, nameOfFunction(handlers.Last()), handlers.Len()))
 }
@@ -101,7 +123,7 @@ func (this *Engine) breakRoute(method, path string) {
 		var node = root.getNode(path)
 
 		if node != nil {
-			node.handlers = nil
+			node.route = nil
 		}
 	}
 }
@@ -117,7 +139,7 @@ func (this *Engine) existRoute(method, path string) bool {
 		var root = this.trees[i].root
 		var node = root.getNode(path)
 
-		if node != nil && len(node.handlers) > 0 {
+		if node != nil && node.route != nil {
 			return true
 		}
 	}
@@ -135,7 +157,7 @@ func (this *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func (this *Engine) handleHTTPRequest(c *Context) {
 	var method = c.Request.Method
-	var path = CleanPath(c.Request.URL.Path)
+	var path = c.Request.URL.Path
 
 	var ts = this.trees
 	var tl = len(ts)
@@ -146,11 +168,11 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 
 		var root = ts[i].root
 		var value = root.getValue(path, c.params, false)
-		if value.handlers != nil {
-			c.handlers = value.handlers
+		if value.route != nil {
+			c.handlers = value.route.handlers
+			c.balancer = value.route.balancer
 			c.params = value.params
-			c.Next()
-			c.Writer.WriteHeaderNow()
+			c.exec()
 			return
 		}
 	}
@@ -164,7 +186,7 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 
 			var root = ts[i].root
 			var value = root.getValue(path, c.params, false)
-			if value.handlers != nil {
+			if value.route != nil {
 				c.handlers = this.allNoMethod
 				this.handleError(c, http.StatusMethodNotAllowed, default405Body)
 				return

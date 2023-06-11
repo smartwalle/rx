@@ -14,21 +14,21 @@ type Router interface {
 
 	Exist(method, path string) bool
 
-	GET(path string, handlers ...HandlerFunc)
+	GET(path string, targets []string, handlers ...HandlerFunc)
 
-	HEAD(path string, handlers ...HandlerFunc)
+	HEAD(path string, targets []string, handlers ...HandlerFunc)
 
-	POST(path string, handlers ...HandlerFunc)
+	POST(path string, targets []string, handlers ...HandlerFunc)
 
-	PUT(path string, handlers ...HandlerFunc)
+	PUT(path string, targets []string, handlers ...HandlerFunc)
 
-	PATCH(path string, handlers ...HandlerFunc)
+	PATCH(path string, targets []string, handlers ...HandlerFunc)
 
-	DELETE(path string, handlers ...HandlerFunc)
+	DELETE(path string, targets []string, handlers ...HandlerFunc)
 
-	OPTIONS(path string, handlers ...HandlerFunc)
+	OPTIONS(path string, targets []string, handlers ...HandlerFunc)
 
-	Any(path string, handlers ...HandlerFunc)
+	Any(path string, targets []string, handlers ...HandlerFunc)
 }
 
 type RouterGroup struct {
@@ -68,51 +68,51 @@ func (this *RouterGroup) Exist(method, path string) bool {
 	return this.engine.existRoute(method, path)
 }
 
-func (this *RouterGroup) GET(path string, handlers ...HandlerFunc) {
-	this.handle(http.MethodGet, path, handlers)
+func (this *RouterGroup) GET(path string, targets []string, handlers ...HandlerFunc) {
+	this.handle(http.MethodGet, path, targets, handlers)
 }
 
-func (this *RouterGroup) HEAD(path string, handlers ...HandlerFunc) {
-	this.handle(http.MethodHead, path, handlers)
+func (this *RouterGroup) HEAD(path string, targets []string, handlers ...HandlerFunc) {
+	this.handle(http.MethodHead, path, targets, handlers)
 }
 
-func (this *RouterGroup) POST(path string, handlers ...HandlerFunc) {
-	this.handle(http.MethodPost, path, handlers)
+func (this *RouterGroup) POST(path string, targets []string, handlers ...HandlerFunc) {
+	this.handle(http.MethodPost, path, targets, handlers)
 }
 
-func (this *RouterGroup) PUT(path string, handlers ...HandlerFunc) {
-	this.handle(http.MethodPut, path, handlers)
+func (this *RouterGroup) PUT(path string, targets []string, handlers ...HandlerFunc) {
+	this.handle(http.MethodPut, path, targets, handlers)
 }
 
-func (this *RouterGroup) PATCH(path string, handlers ...HandlerFunc) {
-	this.handle(http.MethodPatch, path, handlers)
+func (this *RouterGroup) PATCH(path string, targets []string, handlers ...HandlerFunc) {
+	this.handle(http.MethodPatch, path, targets, handlers)
 }
 
-func (this *RouterGroup) DELETE(path string, handlers ...HandlerFunc) {
-	this.handle(http.MethodDelete, path, handlers)
+func (this *RouterGroup) DELETE(path string, targets []string, handlers ...HandlerFunc) {
+	this.handle(http.MethodDelete, path, targets, handlers)
 }
 
-func (this *RouterGroup) OPTIONS(path string, handlers ...HandlerFunc) {
-	this.handle(http.MethodOptions, path, handlers)
+func (this *RouterGroup) OPTIONS(path string, targets []string, handlers ...HandlerFunc) {
+	this.handle(http.MethodOptions, path, targets, handlers)
 }
 
-func (this *RouterGroup) Any(path string, handlers ...HandlerFunc) {
-	this.handle(http.MethodGet, path, handlers)
-	this.handle(http.MethodHead, path, handlers)
-	this.handle(http.MethodPost, path, handlers)
-	this.handle(http.MethodPut, path, handlers)
-	this.handle(http.MethodPatch, path, handlers)
-	this.handle(http.MethodDelete, path, handlers)
-	this.handle(http.MethodConnect, path, handlers)
-	this.handle(http.MethodOptions, path, handlers)
-	this.handle(http.MethodTrace, path, handlers)
+func (this *RouterGroup) Any(path string, targets []string, handlers ...HandlerFunc) {
+	this.handle(http.MethodGet, path, targets, handlers)
+	this.handle(http.MethodHead, path, targets, handlers)
+	this.handle(http.MethodPost, path, targets, handlers)
+	this.handle(http.MethodPut, path, targets, handlers)
+	this.handle(http.MethodPatch, path, targets, handlers)
+	this.handle(http.MethodDelete, path, targets, handlers)
+	this.handle(http.MethodConnect, path, targets, handlers)
+	this.handle(http.MethodOptions, path, targets, handlers)
+	this.handle(http.MethodTrace, path, targets, handlers)
 }
 
-func (this *RouterGroup) handle(method, path string, handlers HandlersChain) {
+func (this *RouterGroup) handle(method, path string, targets []string, handlers HandlersChain) {
 	method = strings.ToUpper(method)
 	path = CleanPath(joinPaths(this.basePath, path))
 	var nHandlers = this.combineHandlers(handlers)
-	this.engine.addRoute(method, path, nHandlers)
+	this.engine.addRoute(method, path, targets, nHandlers)
 }
 
 func (this *RouterGroup) combineHandlers(handlers HandlersChain) HandlersChain {

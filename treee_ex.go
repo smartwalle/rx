@@ -7,7 +7,7 @@ walk: // Outer loop for walking the tree
 		if path == prefix {
 			// We should have reached the node containing the handle.
 			// Check if this node has a handle registered.
-			if n.handlers != nil {
+			if n.route != nil {
 				return n
 			}
 
@@ -70,7 +70,7 @@ walk: // Outer loop for walking the tree
 					return nil
 				}
 
-				if n.handlers != nil {
+				if n.route != nil {
 					return n
 				}
 				if len(n.children) == 1 {

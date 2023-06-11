@@ -1,6 +1,8 @@
 package rx
 
 import (
+	"fmt"
+	"github.com/smartwalle/rx/balancer"
 	"net/http"
 )
 
@@ -13,6 +15,7 @@ type Context struct {
 	Writer        ResponseWriter
 	defaultWriter *responseWriter
 	handlers      HandlersChain
+	balancer      balancer.Balancer
 	params        Params
 	index         int
 	abort         bool
@@ -27,6 +30,7 @@ func (this *Context) reset(w http.ResponseWriter, req *http.Request) {
 	this.defaultWriter.reset(w)
 	this.Writer = this.defaultWriter
 	this.handlers = nil
+	this.balancer = nil
 	this.params = this.params[0:0]
 	this.index = -1
 	this.abort = false
@@ -86,4 +90,30 @@ func (this *Context) Params() Params {
 
 func (this *Context) Param(key string) string {
 	return this.params.ByName(key)
+}
+
+func (this *Context) proxy() {
+	if !this.abort {
+		var target, err = this.balancer.Pick(this.Request)
+		if err != nil {
+			this.error(http.StatusBadGateway, []byte(fmt.Sprintf("%s: %s", http.StatusText(http.StatusBadGateway), err.Error())))
+			return
+		}
+		this.Request.URL.Path = CleanPath(this.Request.URL.Path)
+		target.ServeHTTP(this.Writer, this.Request)
+	}
+}
+
+func (this *Context) exec() {
+	this.Next()
+	this.proxy()
+	this.Writer.WriteHeaderNow()
+}
+
+func (this *Context) error(statusCode int, body []byte) {
+	this.Writer.WriteHeader(statusCode)
+	if this.Writer.Written() {
+		return
+	}
+	this.Writer.Write(body)
 }
