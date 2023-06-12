@@ -16,6 +16,9 @@ func main() {
 		s.ServeHTTP(context.Writer, context.Request)
 	})
 
+	server.GET("/ws", func(context *gin.Context) {
+		s.ServeHTTP(context.Writer, context.Request)
+	})
 	server.GET("/hi", func(context *gin.Context) {
 		context.Writer.WriteString("hi from gate")
 	})

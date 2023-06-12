@@ -17,7 +17,7 @@ func main() {
 	//	time.Sleep(time.Millisecond * 10)
 	//}
 
-	var c, _, err = websocket.DefaultDialer.Dial("ws://127.0.0.1:9910/ws", nil)
+	var c, _, err = websocket.DefaultDialer.Dial("ws://127.0.0.1:9901/ws", nil)
 	fmt.Println(err)
 	for {
 		c.WriteMessage(websocket.TextMessage, []byte("sss"))
