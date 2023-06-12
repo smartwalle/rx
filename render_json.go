@@ -11,12 +11,12 @@ type JSONRender struct {
 	data interface{}
 }
 
-func (this JSONRender) ContentType() []string {
+func (r JSONRender) ContentType() []string {
 	return kContentTypeJSON
 }
 
-func (this JSONRender) Render(w http.ResponseWriter) error {
-	bytes, err := json.Marshal(this.data)
+func (r JSONRender) Render(w http.ResponseWriter) error {
+	bytes, err := json.Marshal(r.data)
 	if err != nil {
 		return err
 	}

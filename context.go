@@ -1,91 +1,104 @@
 package rx
 
 import (
+	"math"
 	"net/http"
 )
 
 const (
-	kContentType = "Content-Type"
+	kContentType      = "Content-Type"
+	kAbortIndex  int8 = math.MaxInt8 >> 1
 )
 
 type Context struct {
-	Request       *http.Request
-	Writer        ResponseWriter
-	defaultWriter *responseWriter
-	index         int
-	abort         bool
+	mWriter responseWriter
+	Request *http.Request
+	Writer  ResponseWriter
 
 	handlers HandlersChain
-	params   Params
+	index    int8
+
+	Location *Location
 }
 
-func newContext() *Context {
-	return &Context{defaultWriter: &responseWriter{}}
+func (c *Context) reset(writer http.ResponseWriter, request *http.Request) {
+	c.mWriter.reset(writer)
+	c.Writer = &c.mWriter
+	c.Request = request
+	c.handlers = nil
+	c.index = -1
+	c.Location = nil
 }
 
-func (this *Context) reset(w http.ResponseWriter, req *http.Request) {
-	this.Request = req
-	this.defaultWriter.reset(w)
-	this.Writer = this.defaultWriter
-	this.index = -1
-	this.abort = false
-
-	this.handlers = nil
-	this.params = this.params[0:0]
-}
-
-func (this *Context) Next() {
-	this.index++
-	for !this.abort && this.index < len(this.handlers) {
-		this.handlers[this.index](this)
-		this.index++
+func (c *Context) Next() {
+	c.index++
+	for c.index < int8(len(c.handlers)) {
+		c.handlers[c.index](c)
+		c.index++
 	}
 }
 
-func (this *Context) Abort() {
-	this.abort = true
+func (c *Context) IsAborted() bool {
+	return c.index >= kAbortIndex
 }
 
-func (this *Context) AbortWithStatus(statusCode int) {
-	this.abort = true
-	this.Writer.WriteHeader(statusCode)
+func (c *Context) Abort() {
+	c.index = kAbortIndex
 }
 
-func (this *Context) Write(statusCode int, b []byte) {
-	this.Writer.WriteHeader(statusCode)
-	this.Writer.Write(b)
+func (c *Context) AbortWithStatus(code int) {
+	c.Status(code)
+	c.Writer.WriteHeaderNow()
+	c.Abort()
 }
 
-func (this *Context) JSON(statusCode int, obj interface{}) {
-	this.Render(statusCode, JSONRender{data: obj})
+func (c *Context) AbortWithJSON(code int, obj interface{}) {
+	c.Abort()
+	c.JSON(code, obj)
 }
 
-func (this *Context) Render(statusCode int, r Render) {
+func (c *Context) JSON(code int, obj interface{}) {
+	c.Render(code, JSONRender{data: obj})
+}
+
+func (c *Context) String(code int, s string) {
+	c.Render(code, TextRender{text: s})
+}
+
+func (c *Context) Render(code int, r Render) {
 	if r == nil {
 		return
 	}
 
-	this.Writer.WriteHeader(statusCode)
+	c.Writer.WriteHeader(code)
 
-	var header = this.Writer.Header()
+	var header = c.Writer.Header()
 	if val := header[kContentType]; len(val) == 0 {
 		header[kContentType] = r.ContentType()
 	}
 
-	if !bodyAllowedForStatus(statusCode) {
-		this.Writer.WriteHeaderNow()
+	if !bodyAllowedForStatus(code) {
+		c.Writer.WriteHeaderNow()
 		return
 	}
 
-	if err := r.Render(this.Writer); err != nil {
-		panic(err)
+	if err := r.Render(c.Writer); err != nil {
+		c.Abort()
 	}
 }
 
-func (this *Context) Params() Params {
-	return this.params
+func (c *Context) Status(code int) {
+	c.Writer.WriteHeader(code)
 }
 
-func (this *Context) Param(key string) string {
-	return this.params.ByName(key)
+func bodyAllowedForStatus(status int) bool {
+	switch {
+	case status >= 100 && status <= 199:
+		return false
+	case status == http.StatusNoContent:
+		return false
+	case status == http.StatusNotModified:
+		return false
+	}
+	return true
 }
