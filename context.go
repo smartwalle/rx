@@ -15,8 +15,7 @@ type Context struct {
 	Request *http.Request
 	Writer  ResponseWriter
 
-	handlers HandlersChain
-	index    int8
+	index int8
 
 	Location *Location
 }
@@ -25,16 +24,17 @@ func (c *Context) reset(writer http.ResponseWriter, request *http.Request) {
 	c.mWriter.reset(writer)
 	c.Writer = &c.mWriter
 	c.Request = request
-	c.handlers = nil
 	c.index = -1
 	c.Location = nil
 }
 
 func (c *Context) Next() {
-	c.index++
-	for c.index < int8(len(c.handlers)) {
-		c.handlers[c.index](c)
+	if c.Location != nil {
 		c.index++
+		for c.index < int8(len(c.Location.handlers)) {
+			c.Location.handlers[c.index](c)
+			c.index++
+		}
 	}
 }
 

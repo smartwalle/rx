@@ -4,6 +4,7 @@ import (
 	"github.com/smartwalle/rx/balancer"
 	"github.com/smartwalle/rx/balancer/roundrobin"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"regexp"
 	"sync"
@@ -61,15 +62,19 @@ func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 func (this *Engine) handleHTTPRequest(c *Context) {
 	var path = c.Request.URL.Path
 	for _, location := range this.locations {
-		if location.Regexp.MatchString(path) {
+		if location.Match(path) {
 			c.Location = location
-			c.handlers = this.handlers
 			c.Next()
 
 			if !c.IsAborted() {
-				var target, err = c.Location.Balancer.Pick(c.Request)
+				var target, err = c.Location.Pick(c.Request)
 				if err != nil {
-
+					serveError(c, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+					return
+				}
+				if target == nil {
+					serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadRequest))
+					return
 				}
 				target.ServeHTTP(c.Writer, c.Request)
 			}
@@ -77,12 +82,33 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 			return
 		}
 	}
-
 	c.AbortWithStatus(http.StatusNotFound)
 	c.Writer.WriteString(http.StatusText(http.StatusNotFound))
 }
 
-func (this *Engine) Add(path string, targets []string) {
+func serveError(c *Context, code int, message string) {
+	c.mWriter.status = code
+	c.Next()
+	if c.mWriter.Written() {
+		return
+	}
+	if c.mWriter.Status() == code {
+		c.mWriter.Header()[kContentType] = kContentTypeText
+		c.Writer.WriteString(message)
+		return
+	}
+	c.mWriter.WriteHeaderNow()
+}
+
+func (this *Engine) combineHandlers(handlers HandlersChain) HandlersChain {
+	finalSize := len(this.handlers) + len(handlers)
+	mergedHandlers := make(HandlersChain, finalSize)
+	copy(mergedHandlers, this.handlers)
+	copy(mergedHandlers[len(this.handlers):], handlers)
+	return mergedHandlers
+}
+
+func (this *Engine) Add(path string, targets []string, handlers ...HandlerFunc) {
 	var nTargets = make([]*url.URL, 0, len(targets))
 
 	for _, target := range targets {
@@ -104,16 +130,26 @@ func (this *Engine) Add(path string, targets []string) {
 
 	var location = &Location{}
 	location.Path = path
-	location.Regexp = nRegexp
-	location.Targets = nTargets
-	location.Balancer = nBalancer
+	location.handlers = this.combineHandlers(handlers)
+	location.regexp = nRegexp
+	location.targets = nTargets
+	location.balancer = nBalancer
 
 	this.locations = append(this.locations, location)
 }
 
 type Location struct {
 	Path     string
-	Regexp   *regexp.Regexp
-	Targets  []*url.URL
-	Balancer balancer.Balancer
+	handlers HandlersChain
+	regexp   *regexp.Regexp
+	targets  []*url.URL
+	balancer balancer.Balancer
+}
+
+func (this *Location) Match(path string) bool {
+	return this.regexp.MatchString(path)
+}
+
+func (this *Location) Pick(req *http.Request) (*httputil.ReverseProxy, error) {
+	return this.balancer.Pick(req)
 }
