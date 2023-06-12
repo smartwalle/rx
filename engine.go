@@ -72,7 +72,7 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 					return
 				}
 				if target == nil {
-					serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadRequest))
+					serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 					return
 				}
 				target.ServeHTTP(c.Writer, c.Request)
