@@ -4,7 +4,6 @@ import (
 	"github.com/smartwalle/rx/balancer"
 	"github.com/smartwalle/rx/balancer/roundrobin"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"regexp"
 	"sync"
@@ -43,8 +42,8 @@ func (this *Engine) RegisterBalancer(builder balancer.Builder) {
 	}
 }
 
-func (this *Engine) GetBalancer(name string) balancer.Builder {
-	if name == "" {
+func (this *Engine) getBalancer(name string) balancer.Builder {
+	if name == "" || this.balancers[name] == nil {
 		name = roundrobin.Name
 	}
 	return this.balancers[name]
@@ -108,9 +107,8 @@ func (this *Engine) combineHandlers(handlers HandlersChain) HandlersChain {
 	return mergedHandlers
 }
 
-func (this *Engine) Add(path string, targets []string, handlers ...HandlerFunc) {
+func (this *Engine) Add(path string, targets []string, opts ...Option) {
 	var nTargets = make([]*url.URL, 0, len(targets))
-
 	for _, target := range targets {
 		var nURL, err = url.Parse(target)
 		if err != nil {
@@ -119,10 +117,6 @@ func (this *Engine) Add(path string, targets []string, handlers ...HandlerFunc) 
 		nTargets = append(nTargets, nURL)
 	}
 
-	nBalancer, err := this.GetBalancer("").Build(nTargets)
-	if err != nil {
-		panic(err.Error())
-	}
 	nRegexp, err := regexp.Compile(path)
 	if err != nil {
 		panic(err.Error())
@@ -130,26 +124,23 @@ func (this *Engine) Add(path string, targets []string, handlers ...HandlerFunc) 
 
 	var location = &Location{}
 	location.Path = path
-	location.handlers = this.combineHandlers(handlers)
+	location.handlers = this.combineHandlers(nil)
 	location.regexp = nRegexp
 	location.targets = nTargets
-	location.balancer = nBalancer
+
+	for _, opt := range opts {
+		if opt != nil {
+			opt(this, location)
+		}
+	}
+
+	if location.balancer == nil {
+		nBalancer, err := this.getBalancer("").Build(nTargets)
+		if err != nil {
+			panic(err.Error())
+		}
+		location.balancer = nBalancer
+	}
 
 	this.locations = append(this.locations, location)
-}
-
-type Location struct {
-	Path     string
-	handlers HandlersChain
-	regexp   *regexp.Regexp
-	targets  []*url.URL
-	balancer balancer.Balancer
-}
-
-func (this *Location) Match(path string) bool {
-	return this.regexp.MatchString(path)
-}
-
-func (this *Location) Pick(req *http.Request) (*httputil.ReverseProxy, error) {
-	return this.balancer.Pick(req)
 }
