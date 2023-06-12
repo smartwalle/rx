@@ -9,8 +9,8 @@ func main() {
 	s.GET("/test", func(c *gin.Context) {
 		c.Writer.WriteString("9910")
 	})
-	s.GET("/test/h", func(c *gin.Context) {
-		c.Writer.WriteString("h")
+	s.GET("/test/hello", func(c *gin.Context) {
+		c.Writer.WriteString("hello from 9910")
 	})
 	s.Run(":9910")
 }
