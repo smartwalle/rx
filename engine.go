@@ -81,8 +81,8 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 			return
 		}
 	}
-	c.AbortWithStatus(http.StatusNotFound)
-	c.Writer.WriteString(http.StatusText(http.StatusNotFound))
+	c.AbortWithStatus(http.StatusBadGateway)
+	c.Writer.WriteString(http.StatusText(http.StatusBadGateway))
 }
 
 func serveError(c *Context, code int, message string) {
