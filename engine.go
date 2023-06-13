@@ -111,18 +111,27 @@ func (this *Engine) combineHandlers(handlers HandlersChain) HandlersChain {
 }
 
 func (this *Engine) Add(path string, targets []string, opts ...Option) error {
+	var location, err = this.BuildLocation(path, targets, opts...)
+	if err != nil {
+		return err
+	}
+	this.locations = append(this.locations, location)
+	return nil
+}
+
+func (this *Engine) BuildLocation(path string, targets []string, opts ...Option) (*Location, error) {
 	var nTargets = make([]*url.URL, 0, len(targets))
 	for _, target := range targets {
 		nURL, err := url.Parse(target)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		nTargets = append(nTargets, nURL)
 	}
 
 	nRegexp, err := regexp.Compile(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var location = &Location{}
@@ -134,7 +143,7 @@ func (this *Engine) Add(path string, targets []string, opts ...Option) error {
 	for _, opt := range opts {
 		if opt != nil {
 			if err = opt(this, location); err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
@@ -142,18 +151,16 @@ func (this *Engine) Add(path string, targets []string, opts ...Option) error {
 	if location.balancer == nil {
 		info, nErr := this.buildBalancerBuildInfo(location.targets)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		nBalancer, nErr := this.getBalancer("").Build(info)
 		if nErr != nil {
-			return nErr
+			return nil, nErr
 		}
 		location.balancer = nBalancer
 	}
-
-	this.locations = append(this.locations, location)
-	return nil
+	return location, nil
 }
 
 func (this *Engine) buildBalancerBuildInfo(targets []*url.URL) (balancer.BuildInfo, error) {
