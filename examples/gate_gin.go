@@ -3,10 +3,13 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/smartwalle/rx"
+	"log"
 	"time"
 )
 
 func main() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+
 	var s = rx.New()
 	s.Add("/user", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"})
 	s.Add("/order", []string{"http://127.0.0.1:9920", "http://127.0.0.1:9921"})
@@ -16,8 +19,10 @@ func main() {
 		var idx = 0
 		var uList = [][]string{{"http://127.0.0.1:9910"}, {"http://127.0.0.1:9911"}}
 		for {
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 3)
 			idx += 1
+
+			time.Sleep(time.Second)
 			var location, _ = s.BuildLocation("/user", uList[idx%2])
 			s.UpdateLocations([]*rx.Location{location})
 		}
@@ -27,15 +32,16 @@ func main() {
 		var idx = 0
 		var uList = [][]string{{"http://127.0.0.1:9912"}, {"http://127.0.0.1:9913"}}
 		for {
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 3)
 			idx += 1
 
+			time.Sleep(time.Second)
 			var location, _ = s.BuildLocation("/user", uList[idx%2])
 			s.UpdateLocations([]*rx.Location{location})
 		}
 	}()
 
-	var gate = gin.Default()
+	var gate = gin.New()
 	gate.Any("/user/*xx", func(context *gin.Context) {
 		s.ServeHTTP(context.Writer, context.Request)
 	})

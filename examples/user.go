@@ -7,6 +7,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+
 	RunUserServer("9910", "9911", "9912", "9913")
 	select {}
 }

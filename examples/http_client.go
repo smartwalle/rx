@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -10,6 +9,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+
 	var begin = time.Now()
 	var wait = &sync.WaitGroup{}
 
@@ -22,11 +23,12 @@ func main() {
 	}
 
 	wait.Wait()
-	fmt.Println(time.Now().Sub(begin))
+	log.Println(time.Now().Sub(begin))
 }
 
 func request(wait *sync.WaitGroup) {
 	defer wait.Done()
+	var begin = time.Now()
 	var rsp, err = http.Get("http://127.0.0.1:9900/user/list")
 	if err != nil {
 		log.Println(err)
@@ -35,13 +37,13 @@ func request(wait *sync.WaitGroup) {
 	defer rsp.Body.Close()
 
 	if rsp.StatusCode != http.StatusOK {
-		log.Println(rsp.StatusCode)
+		log.Println(rsp.StatusCode, time.Now().Sub(begin))
 		return
 	}
 
-	var data, _ = io.ReadAll(rsp.Body)
+	data, err := io.ReadAll(rsp.Body)
 	if len(data) == 0 {
-		log.Println(string(data))
+		log.Println(string(data), err)
 		return
 	}
 }

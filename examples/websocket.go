@@ -8,6 +8,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+
 	RunWebsocketServer("9930", "9931")
 	select {}
 }
