@@ -7,11 +7,12 @@ import (
 
 func main() {
 	var s = rx.New()
-	s.Add("/test/login", []string{"http://127.0.0.1:9913"})
-	s.Add("/test", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"})
+	s.Add("/user", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"})
+	s.Add("/order", []string{"http://127.0.0.1:9920", "http://127.0.0.1:9921"})
+	s.Add("/ws", []string{"http://127.0.0.1:9930", "http://127.0.0.1:9931"})
 
 	http.Handle("/", s)
 	// or
 	// http.HandleFunc("/", s.ServeHTTP)
-	http.ListenAndServe(":9902", nil)
+	http.ListenAndServe(":9901", nil)
 }

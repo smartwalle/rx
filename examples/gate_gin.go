@@ -7,20 +7,24 @@ import (
 
 func main() {
 	var s = rx.New()
-	s.Add("/test/login", []string{"http://127.0.0.1:9913"})
-	s.Add("/test", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"})
-	s.Add("/ws", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"})
+	s.Add("/user", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"})
+	s.Add("/order", []string{"http://127.0.0.1:9920", "http://127.0.0.1:9921"})
+	s.Add("/ws", []string{"http://127.0.0.1:9930", "http://127.0.0.1:9931"})
 
-	var server = gin.Default()
-	server.NoRoute(func(context *gin.Context) {
+	var gate = gin.Default()
+	gate.Any("/user/*xx", func(context *gin.Context) {
+		s.ServeHTTP(context.Writer, context.Request)
+	})
+	gate.Any("/order/*xx", func(context *gin.Context) {
 		s.ServeHTTP(context.Writer, context.Request)
 	})
 
-	server.GET("/ws", func(context *gin.Context) {
+	gate.Any("/ws", func(context *gin.Context) {
 		s.ServeHTTP(context.Writer, context.Request)
 	})
-	server.GET("/hi", func(context *gin.Context) {
-		context.Writer.WriteString("hi from gate")
+
+	gate.GET("/gate", func(context *gin.Context) {
+		context.Writer.WriteString("来自网关的消息")
 	})
-	server.Run(":9901")
+	gate.Run(":9900")
 }
