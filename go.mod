@@ -1,3 +1,11 @@
 module github.com/smartwalle/rx
 
-go 1.13
+require (
+	github.com/smartwalle/nsync v0.0.0
+)
+
+replace (
+	github.com/smartwalle/nsync => ../nsync
+)
+
+go 1.18

@@ -22,7 +22,7 @@ type Engine struct {
 
 	pool sync.Pool
 
-	ReverseProxyBuilder func(target *url.URL) (*httputil.ReverseProxy, error)
+	ProxyBuilder func(target *url.URL) (*httputil.ReverseProxy, error)
 }
 
 func New() *Engine {
@@ -119,6 +119,10 @@ func (this *Engine) Add(path string, targets []string, opts ...Option) error {
 	return nil
 }
 
+func (this *Engine) UpdateLocations(locations []*Location) {
+	this.locations = locations
+}
+
 func (this *Engine) BuildLocation(path string, targets []string, opts ...Option) (*Location, error) {
 	var nTargets = make([]*url.URL, 0, len(targets))
 	for _, target := range targets {
@@ -164,7 +168,7 @@ func (this *Engine) BuildLocation(path string, targets []string, opts ...Option)
 }
 
 func (this *Engine) buildBalancerBuildInfo(targets []*url.URL) (balancer.BuildInfo, error) {
-	var builder = this.ReverseProxyBuilder
+	var builder = this.ProxyBuilder
 	if builder == nil {
 		builder = this.defaultReverseProxyBuilder
 	}

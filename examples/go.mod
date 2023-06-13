@@ -1,6 +1,6 @@
 module github.com/smartwalle/rx/examples
 
-go 1.20
+go 1.18
 
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect
