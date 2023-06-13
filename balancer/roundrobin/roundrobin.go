@@ -5,7 +5,6 @@ import (
 	"github.com/smartwalle/rx/balancer"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"sync"
 )
 
@@ -24,14 +23,13 @@ func (this *rrBuilder) Name() string {
 	return Name
 }
 
-func (this *rrBuilder) Build(targets []*url.URL) (balancer.Balancer, error) {
-	if len(targets) == 0 {
+func (this *rrBuilder) Build(info balancer.BuildInfo) (balancer.Balancer, error) {
+	if len(info.Targets) == 0 {
 		return nil, errors.New("no targets is available")
 	}
-
-	var nTargets = make([]*httputil.ReverseProxy, 0, len(targets))
-	for _, target := range targets {
-		nTargets = append(nTargets, httputil.NewSingleHostReverseProxy(target))
+	var nTargets = make([]*httputil.ReverseProxy, 0, len(info.Targets))
+	for _, value := range info.Targets {
+		nTargets = append(nTargets, value)
 	}
 	return &rrBalancer{targets: nTargets, next: 0}, nil
 }

@@ -6,10 +6,14 @@ import (
 	"net/url"
 )
 
+type BuildInfo struct {
+	Targets map[*url.URL]*httputil.ReverseProxy
+}
+
 type Builder interface {
 	Name() string
 
-	Build(targets []*url.URL) (Balancer, error)
+	Build(info BuildInfo) (Balancer, error)
 }
 
 type Balancer interface {

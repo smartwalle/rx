@@ -4,6 +4,7 @@ import (
 	"github.com/smartwalle/rx/balancer"
 	"github.com/smartwalle/rx/balancer/roundrobin"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"regexp"
 	"sync"
@@ -20,6 +21,8 @@ type Engine struct {
 	locations []*Location
 
 	pool sync.Pool
+
+	ReverseProxyBuilder func(target *url.URL) (*httputil.ReverseProxy, error)
 }
 
 func New() *Engine {
@@ -107,19 +110,19 @@ func (this *Engine) combineHandlers(handlers HandlersChain) HandlersChain {
 	return mergedHandlers
 }
 
-func (this *Engine) Add(path string, targets []string, opts ...Option) {
+func (this *Engine) Add(path string, targets []string, opts ...Option) error {
 	var nTargets = make([]*url.URL, 0, len(targets))
 	for _, target := range targets {
-		var nURL, err = url.Parse(target)
+		nURL, err := url.Parse(target)
 		if err != nil {
-			panic(err.Error())
+			return err
 		}
 		nTargets = append(nTargets, nURL)
 	}
 
 	nRegexp, err := regexp.Compile(path)
 	if err != nil {
-		panic(err.Error())
+		return err
 	}
 
 	var location = &Location{}
@@ -130,17 +133,48 @@ func (this *Engine) Add(path string, targets []string, opts ...Option) {
 
 	for _, opt := range opts {
 		if opt != nil {
-			opt(this, location)
+			if err = opt(this, location); err != nil {
+				return err
+			}
 		}
 	}
 
 	if location.balancer == nil {
-		nBalancer, err := this.getBalancer("").Build(nTargets)
+		info, nErr := this.buildBalancerBuildInfo(location.targets)
 		if err != nil {
-			panic(err.Error())
+			return err
+		}
+
+		nBalancer, nErr := this.getBalancer("").Build(info)
+		if nErr != nil {
+			return nErr
 		}
 		location.balancer = nBalancer
 	}
 
 	this.locations = append(this.locations, location)
+	return nil
+}
+
+func (this *Engine) buildBalancerBuildInfo(targets []*url.URL) (balancer.BuildInfo, error) {
+	var builder = this.ReverseProxyBuilder
+	if builder == nil {
+		builder = this.defaultReverseProxyBuilder
+	}
+
+	var proxies = make(map[*url.URL]*httputil.ReverseProxy)
+	for _, target := range targets {
+		var proxy, err = builder(target)
+		if err != nil {
+			return balancer.BuildInfo{}, err
+		}
+		if proxy != nil {
+			proxies[target] = proxy
+		}
+	}
+	return balancer.BuildInfo{Targets: proxies}, nil
+}
+
+func (this *Engine) defaultReverseProxyBuilder(target *url.URL) (*httputil.ReverseProxy, error) {
+	return httputil.NewSingleHostReverseProxy(target), nil
 }

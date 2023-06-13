@@ -8,25 +8,31 @@ import (
 	"regexp"
 )
 
-type Option func(engine *Engine, location *Location)
+type Option func(engine *Engine, location *Location) error
 
 func WithHandler(handlers ...HandlerFunc) Option {
-	return func(engine *Engine, location *Location) {
+	return func(engine *Engine, location *Location) error {
 		if len(handlers) > 0 {
 			location.handlers = engine.combineHandlers(handlers)
 		}
+		return nil
 	}
 }
 
 func WithBalancer(builder balancer.Builder) Option {
-	return func(engine *Engine, location *Location) {
+	return func(engine *Engine, location *Location) error {
 		if builder != nil {
-			var err error
-			location.balancer, err = builder.Build(location.targets)
-			if err != nil {
-				panic(err)
+			info, nErr := engine.buildBalancerBuildInfo(location.targets)
+			if nErr != nil {
+				return nErr
 			}
+			nBalancer, nErr := builder.Build(info)
+			if nErr != nil {
+				return nErr
+			}
+			location.balancer = nBalancer
 		}
+		return nil
 	}
 }
 
