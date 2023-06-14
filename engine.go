@@ -69,7 +69,7 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 			c.Next()
 
 			if !c.IsAborted() {
-				var target, err = c.Location.Pick(c.Request)
+				var target, err = c.Location.pick(c.Request)
 				if err != nil {
 					serveError(c, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 					return
@@ -168,14 +168,9 @@ func (this *Engine) BuildLocation(path string, targets []string, opts ...Option)
 }
 
 func (this *Engine) buildBalancerBuildInfo(targets []*url.URL) (balancer.BuildInfo, error) {
-	var builder = this.ProxyBuilder
-	if builder == nil {
-		builder = this.defaultReverseProxyBuilder
-	}
-
 	var proxies = make(map[*url.URL]*httputil.ReverseProxy)
 	for _, target := range targets {
-		var proxy, err = builder(target)
+		var proxy, err = this.buildReverseProxy(target)
 		if err != nil {
 			return balancer.BuildInfo{}, err
 		}
@@ -186,6 +181,9 @@ func (this *Engine) buildBalancerBuildInfo(targets []*url.URL) (balancer.BuildIn
 	return balancer.BuildInfo{Targets: proxies}, nil
 }
 
-func (this *Engine) defaultReverseProxyBuilder(target *url.URL) (*httputil.ReverseProxy, error) {
+func (this *Engine) buildReverseProxy(target *url.URL) (*httputil.ReverseProxy, error) {
+	if this.ProxyBuilder != nil {
+		return this.ProxyBuilder(target)
+	}
 	return httputil.NewSingleHostReverseProxy(target), nil
 }

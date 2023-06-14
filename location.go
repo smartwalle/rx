@@ -48,6 +48,6 @@ func (this *Location) Match(path string) bool {
 	return this.regexp.MatchString(path)
 }
 
-func (this *Location) Pick(req *http.Request) (*httputil.ReverseProxy, error) {
+func (this *Location) pick(req *http.Request) (*httputil.ReverseProxy, error) {
 	return this.balancer.Pick(req)
 }
