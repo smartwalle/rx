@@ -7,15 +7,15 @@ import (
 
 var kContentTypeText = []string{"text/plain; charset=utf-8"}
 
-type TextRender struct {
+type textRender struct {
 	text string
 }
 
-func (r TextRender) ContentType() []string {
+func (r textRender) ContentType() []string {
 	return kContentTypeText
 }
 
-func (r TextRender) Render(w http.ResponseWriter) error {
+func (r textRender) Render(w http.ResponseWriter) error {
 	_, err := fmt.Fprintf(w, r.text)
 	return err
 }

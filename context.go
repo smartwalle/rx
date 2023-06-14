@@ -67,11 +67,11 @@ func (c *Context) AbortWithJSON(code int, obj interface{}) {
 }
 
 func (c *Context) JSON(code int, obj interface{}) {
-	c.Render(code, JSONRender{data: obj})
+	c.Render(code, jsonRender{data: obj})
 }
 
 func (c *Context) String(code int, s string) {
-	c.Render(code, TextRender{text: s})
+	c.Render(code, textRender{text: s})
 }
 
 func (c *Context) Render(code int, r Render) {
