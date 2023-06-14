@@ -11,7 +11,7 @@ type HandlersChain []HandlerFunc
 
 type Engine struct {
 	handlers HandlersChain
-	provider Provider
+	provider RouteProvider
 	pool     sync.Pool
 }
 
@@ -27,7 +27,7 @@ func (this *Engine) Use(middleware ...HandlerFunc) {
 	this.handlers = append(this.handlers, middleware...)
 }
 
-func (this *Engine) Load(provider Provider) {
+func (this *Engine) Load(provider RouteProvider) {
 	this.provider = provider
 }
 
@@ -41,18 +41,18 @@ func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 }
 
 func (this *Engine) handleHTTPRequest(c *Context) {
-	var location, err = this.provider.Match(c.Request)
+	var route, err = this.provider.Match(c.Request)
 	if err != nil {
 		serveError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	if location != nil {
-		c.Location = location
+	if route != nil {
+		c.Route = route
 		c.Next()
 
 		if !c.IsAborted() {
-			var target, err = c.Location.pick(c.Request)
+			var target, err = c.Route.pick(c.Request)
 			if err != nil {
 				serveError(c, http.StatusInternalServerError, err.Error())
 				return

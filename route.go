@@ -70,7 +70,7 @@ func (this *options) buildProxy(target *url.URL) *httputil.ReverseProxy {
 	return httputil.NewSingleHostReverseProxy(target)
 }
 
-type Location struct {
+type Route struct {
 	Pattern string
 	regexp  *regexp.Regexp
 	targets []*url.URL
@@ -79,7 +79,7 @@ type Location struct {
 	balancer balancer.Balancer
 }
 
-func NewLocation(pattern string, targets []string, opts ...Option) (*Location, error) {
+func NewRoute(pattern string, targets []string, opts ...Option) (*Route, error) {
 	nRegexp, err := regexp.Compile(pattern)
 	if err != nil {
 		return nil, err
@@ -105,20 +105,20 @@ func NewLocation(pattern string, targets []string, opts ...Option) (*Location, e
 		return nil, err
 	}
 
-	var location = &Location{}
-	location.Pattern = pattern
-	location.regexp = nRegexp
-	location.targets = nTargets
-	location.handlers = nOpts.handlers
-	location.balancer = nBalancer
+	var route = &Route{}
+	route.Pattern = pattern
+	route.regexp = nRegexp
+	route.targets = nTargets
+	route.handlers = nOpts.handlers
+	route.balancer = nBalancer
 
-	return location, nil
+	return route, nil
 }
 
-func (this *Location) Match(path string) bool {
+func (this *Route) Match(path string) bool {
 	return this.regexp.MatchString(path)
 }
 
-func (this *Location) pick(req *http.Request) (*httputil.ReverseProxy, error) {
+func (this *Route) pick(req *http.Request) (*httputil.ReverseProxy, error) {
 	return this.balancer.Pick(req)
 }

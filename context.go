@@ -18,7 +18,7 @@ type Context struct {
 	index int8
 
 	handlers HandlersChain
-	Location *Location
+	Route    *Route
 }
 
 func (c *Context) reset(writer http.ResponseWriter, request *http.Request, handlers HandlersChain) {
@@ -27,11 +27,11 @@ func (c *Context) reset(writer http.ResponseWriter, request *http.Request, handl
 	c.Request = request
 	c.index = -1
 	c.handlers = handlers
-	c.Location = nil
+	c.Route = nil
 }
 
 func (c *Context) Next() {
-	if c.Location != nil {
+	if c.Route != nil {
 		c.index++
 
 		var hLen = int8(len(c.handlers))
@@ -40,8 +40,8 @@ func (c *Context) Next() {
 			c.index++
 		}
 
-		for c.index-hLen < int8(len(c.Location.handlers)) {
-			c.Location.handlers[c.index-hLen](c)
+		for c.index-hLen < int8(len(c.Route.handlers)) {
+			c.Route.handlers[c.index-hLen](c)
 			c.index++
 		}
 	}

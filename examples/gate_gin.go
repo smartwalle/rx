@@ -16,33 +16,6 @@ func main() {
 	provider.Add("/ws", []string{"http://127.0.0.1:9930", "http://127.0.0.1:9931"})
 	s.Load(provider)
 
-	//
-	//go func() {
-	//	var idx = 0
-	//	var uList = [][]string{{"http://127.0.0.1:9910"}, {"http://127.0.0.1:9911"}}
-	//	for {
-	//		time.Sleep(time.Second * 3)
-	//		idx += 1
-	//
-	//		time.Sleep(time.Second)
-	//		var location, _ = s.BuildLocation("/user", uList[idx%2])
-	//		s.UpdateLocations([]*rx.Location{location})
-	//	}
-	//}()
-	//
-	//go func() {
-	//	var idx = 0
-	//	var uList = [][]string{{"http://127.0.0.1:9912"}, {"http://127.0.0.1:9913"}}
-	//	for {
-	//		time.Sleep(time.Second * 3)
-	//		idx += 1
-	//
-	//		time.Sleep(time.Second)
-	//		var location, _ = s.BuildLocation("/user", uList[idx%2])
-	//		s.UpdateLocations([]*rx.Location{location})
-	//	}
-	//}()
-
 	var gate = gin.Default()
 	gate.Any("/user/*xx", func(context *gin.Context) {
 		s.ServeHTTP(context.Writer, context.Request)
