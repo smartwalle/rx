@@ -71,7 +71,7 @@ func (this *options) buildProxy(target *url.URL) *httputil.ReverseProxy {
 }
 
 type Location struct {
-	Path    string
+	Pattern string
 	regexp  *regexp.Regexp
 	targets []*url.URL
 
@@ -79,8 +79,8 @@ type Location struct {
 	balancer balancer.Balancer
 }
 
-func NewLocation(path string, targets []string, opts ...Option) (*Location, error) {
-	nRegexp, err := regexp.Compile(path)
+func NewLocation(pattern string, targets []string, opts ...Option) (*Location, error) {
+	nRegexp, err := regexp.Compile(pattern)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func NewLocation(path string, targets []string, opts ...Option) (*Location, erro
 	}
 
 	var location = &Location{}
-	location.Path = path
+	location.Pattern = pattern
 	location.regexp = nRegexp
 	location.targets = nTargets
 	location.handlers = nOpts.handlers

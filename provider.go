@@ -24,8 +24,8 @@ func (this *ListProvider) Match(req *http.Request) (*Location, error) {
 	return nil, nil
 }
 
-func (this *ListProvider) Add(path string, targets []string, opts ...Option) error {
-	var location, err = NewLocation(path, targets, opts...)
+func (this *ListProvider) Add(pattern string, targets []string, opts ...Option) error {
+	var location, err = NewLocation(pattern, targets, opts...)
 	if err != nil {
 		return err
 	}
