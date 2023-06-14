@@ -43,39 +43,41 @@ func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 func (this *Engine) handleHTTPRequest(c *Context) {
 	var route, err = this.provider.Match(c.Request)
 	if err != nil {
-		serveError(c, http.StatusInternalServerError, err.Error())
+		this.handleError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	if route != nil {
-		c.Route = route
-		c.Next()
+	if route == nil {
+		this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
+		return
+	}
 
-		if !c.IsAborted() {
-			var target, err = c.Route.pick(c.Request)
-			if err != nil {
-				serveError(c, http.StatusInternalServerError, err.Error())
-				return
-			}
-			if target == nil {
-				serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
-				return
-			}
-			target.ServeHTTP(c.Writer, c.Request)
+	c.Route = route
+	c.Next()
+
+	if !c.IsAborted() {
+		var target, err = c.Route.pick(c.Request)
+		if err != nil {
+			this.handleError(c, http.StatusInternalServerError, err.Error())
+			return
 		}
-		c.mWriter.WriteHeaderNow()
-		return
+		if target == nil {
+			this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
+			return
+		}
+		target.ServeHTTP(c.Writer, c.Request)
 	}
-
-	serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
+	c.mWriter.WriteHeaderNow()
 }
 
-func serveError(c *Context, code int, message string) {
+func (this *Engine) handleError(c *Context, code int, message string) {
 	c.mWriter.status = code
 	c.Next()
+
 	if c.mWriter.Written() {
 		return
 	}
+
 	if c.mWriter.Status() == code {
 		c.mWriter.Header()[kContentType] = kContentTypeText
 		c.Writer.WriteString(message)
