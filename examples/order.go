@@ -27,6 +27,7 @@ func orderServer(port string) {
 	})
 
 	s.GET("/order/list", func(context *gin.Context) {
+		log.Println(port)
 		context.Writer.WriteString(fmt.Sprintf("从【%s】获取【订单列表】", port))
 	})
 
