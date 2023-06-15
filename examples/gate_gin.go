@@ -17,11 +17,27 @@ func main() {
 	var s = rx.New()
 	s.Load(provider)
 
-	var gate = gin.Default()
-	gate.Any("/user/*xx", func(context *gin.Context) {
-		s.ServeHTTP(context.Writer, context.Request)
+	s.Use(func(c *rx.Context) {
+		log.Println("middleware 1")
 	})
-	gate.Any("/order/*xx", func(context *gin.Context) {
+
+	s.Use(func(c *rx.Context) {
+		log.Println("middleware 2")
+	})
+
+	s.NoRoute(func(c *rx.Context) {
+		log.Println("no route:", c.Request.URL.Path)
+	})
+
+	var gate = gin.Default()
+
+	//gate.Any("/user/*xx", func(context *gin.Context) {
+	//	s.ServeHTTP(context.Writer, context.Request)
+	//})
+	//gate.Any("/order/*xx", func(context *gin.Context) {
+	//	s.ServeHTTP(context.Writer, context.Request)
+	//})
+	gate.NoRoute(func(context *gin.Context) {
 		s.ServeHTTP(context.Writer, context.Request)
 	})
 

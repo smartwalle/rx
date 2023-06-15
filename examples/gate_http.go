@@ -17,6 +17,18 @@ func main() {
 	var s = rx.New()
 	s.Load(provider)
 
+	s.Use(func(c *rx.Context) {
+		log.Println("middleware 1")
+	})
+
+	s.Use(func(c *rx.Context) {
+		log.Println("middleware 2")
+	})
+
+	s.NoRoute(func(c *rx.Context) {
+		log.Println("no route:", c.Request.URL.Path)
+	})
+
 	http.Handle("/", s)
 	// or
 	// http.HandleFunc("/", s.ServeHTTP)
