@@ -21,12 +21,9 @@ type Context struct {
 	Route    *Route
 }
 
-func (c *Context) reset(writer http.ResponseWriter, request *http.Request, handlers HandlersChain) {
-	c.mWriter.reset(writer)
+func (c *Context) reset() {
 	c.Writer = &c.mWriter
-	c.Request = request
 	c.index = -1
-	c.handlers = handlers
 	c.Route = nil
 }
 

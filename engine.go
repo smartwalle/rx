@@ -13,6 +13,9 @@ type Engine struct {
 	handlers HandlersChain
 	provider RouteProvider
 	pool     sync.Pool
+
+	noRoute  *Route
+	noServer *Route
 }
 
 func New() *Engine {
@@ -20,11 +23,21 @@ func New() *Engine {
 	nEngine.pool.New = func() interface{} {
 		return &Context{}
 	}
+	nEngine.noRoute = &Route{}
+	nEngine.noServer = &Route{}
 	return nEngine
 }
 
 func (this *Engine) Use(middleware ...HandlerFunc) {
 	this.handlers = append(this.handlers, middleware...)
+}
+
+func (this *Engine) NoRoute(handlers ...HandlerFunc) {
+	this.noRoute.handlers = handlers
+}
+
+func (this *Engine) NoServer(handlers ...HandlerFunc) {
+	this.noServer.handlers = handlers
 }
 
 func (this *Engine) Load(provider RouteProvider) {
@@ -33,7 +46,10 @@ func (this *Engine) Load(provider RouteProvider) {
 
 func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	c := this.pool.Get().(*Context)
-	c.reset(writer, request, this.handlers)
+	c.mWriter.reset(writer)
+	c.Request = request
+	c.reset()
+	c.handlers = this.handlers
 
 	this.handleHTTPRequest(c)
 
@@ -42,12 +58,8 @@ func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 
 func (this *Engine) handleHTTPRequest(c *Context) {
 	var route, err = this.provider.Match(c.Request)
-	if err != nil {
-		this.handleError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	if route == nil {
+	if err != nil || route == nil {
+		c.Route = this.noRoute
 		this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
 	}
@@ -57,11 +69,10 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 
 	if !c.IsAborted() {
 		var target, err = c.Route.pick(c.Request)
-		if err != nil {
-			this.handleError(c, http.StatusInternalServerError, err.Error())
-			return
-		}
-		if target == nil {
+		if err != nil || target == nil {
+			c.reset()
+			c.handlers = nil
+			c.Route = this.noServer
 			this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 			return
 		}
