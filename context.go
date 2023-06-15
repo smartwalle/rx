@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"sync"
 )
 
 const (
@@ -23,6 +24,9 @@ type Context struct {
 	proxy    *httputil.ReverseProxy
 	target   *url.URL
 	route    *Route
+
+	mu   sync.RWMutex
+	Keys map[string]interface{}
 }
 
 func (c *Context) reset() {
@@ -32,6 +36,7 @@ func (c *Context) reset() {
 	c.proxy = nil
 	c.target = nil
 	c.route = nil
+	c.Keys = nil
 }
 
 func (c *Context) Next() {
@@ -116,6 +121,22 @@ func (c *Context) Render(code int, r Render) {
 
 func (c *Context) Status(code int) {
 	c.Writer.WriteHeader(code)
+}
+
+func (c *Context) Set(key string, value interface{}) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.Keys == nil {
+		c.Keys = make(map[string]any)
+	}
+	c.Keys[key] = value
+}
+
+func (c *Context) Get(key string) (value interface{}, exists bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	value, exists = c.Keys[key]
+	return
 }
 
 func bodyAllowedForStatus(status int) bool {
