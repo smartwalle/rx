@@ -52,6 +52,14 @@ func (this *options) buildBalancer(targets []*url.URL) (balancer.Balancer, error
 	for _, target := range targets {
 		var proxy = this.buildProxy(target)
 
+		if proxy.ErrorHandler == nil {
+			proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, err error) {
+				if wrapper, ok := writer.(rWriterWrapper); ok {
+					wrapper.context.Error(err)
+				}
+			}
+		}
+
 		if proxy != nil {
 			proxies[target] = proxy
 		}

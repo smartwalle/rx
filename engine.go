@@ -60,7 +60,7 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 	route, err := this.provider.Match(c.Request)
 	if err != nil || route == nil {
 		c.route = this.noRoute
-		this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
+		this.handleError(c, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		return
 	}
 
