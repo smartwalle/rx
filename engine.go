@@ -90,7 +90,7 @@ func (this *Engine) handleError(c *Context, code int, message string) {
 	}
 
 	if c.mWriter.Status() == code {
-		c.mWriter.Header()[kContentType] = kContentTypeText
+		//c.mWriter.Header()[kContentType] = kContentTypeText
 		c.Writer.WriteString(message)
 		return
 	}
