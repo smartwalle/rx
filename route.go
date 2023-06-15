@@ -123,6 +123,6 @@ func (this *Route) Match(path string) bool {
 	return this.regexp.MatchString(path)
 }
 
-func (this *Route) pick(req *http.Request) (balancer.PickResult, error) {
+func (this *Route) pick(req *http.Request) balancer.PickResult {
 	return this.balancer.Pick(req)
 }

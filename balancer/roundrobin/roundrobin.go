@@ -39,14 +39,10 @@ type rrBalancer struct {
 	mu      sync.Mutex
 }
 
-func (this *rrBalancer) Pick(req *http.Request) (balancer.PickResult, error) {
-	if len(this.targets) == 0 {
-		return balancer.PickResult{}, errors.New("no targets is available")
-	}
-
+func (this *rrBalancer) Pick(req *http.Request) balancer.PickResult {
 	this.mu.Lock()
 	target := this.targets[this.next]
 	this.next = (this.next + 1) % len(this.targets)
 	this.mu.Unlock()
-	return target, nil
+	return target
 }

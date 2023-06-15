@@ -13,9 +13,7 @@ type Engine struct {
 	handlers HandlersChain
 	provider RouteProvider
 	pool     sync.Pool
-
-	noRoute *Route
-	noProxy *Route
+	noRoute  *Route
 }
 
 func New() *Engine {
@@ -24,7 +22,6 @@ func New() *Engine {
 		return &Context{}
 	}
 	nEngine.noRoute = &Route{}
-	nEngine.noProxy = &Route{}
 	return nEngine
 }
 
@@ -34,10 +31,6 @@ func (this *Engine) Use(middleware ...HandlerFunc) {
 
 func (this *Engine) NoRoute(handlers ...HandlerFunc) {
 	this.noRoute.handlers = handlers
-}
-
-func (this *Engine) NoProxy(handlers ...HandlerFunc) {
-	this.noProxy.handlers = handlers
 }
 
 func (this *Engine) Load(provider RouteProvider) {
@@ -57,19 +50,14 @@ func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 }
 
 func (this *Engine) handleHTTPRequest(c *Context) {
-	route, err := this.provider.Match(c.Request)
+	var route, err = this.provider.Match(c.Request)
 	if err != nil || route == nil {
 		c.route = this.noRoute
 		this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
 	}
 
-	pResult, err := route.pick(c.Request)
-	if err != nil || pResult.Proxy == nil {
-		c.route = this.noProxy
-		this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
-		return
-	}
+	var pResult = route.pick(c.Request)
 
 	c.proxy = pResult.Proxy
 	c.target = pResult.Target
