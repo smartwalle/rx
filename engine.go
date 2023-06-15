@@ -59,20 +59,21 @@ func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 func (this *Engine) handleHTTPRequest(c *Context) {
 	route, err := this.provider.Match(c.Request)
 	if err != nil || route == nil {
-		c.Route = this.noRoute
+		c.route = this.noRoute
 		this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
 	}
 
-	proxy, err := route.pick(c.Request)
-	if err != nil || proxy == nil {
-		c.Route = this.noProxy
+	pResult, err := route.pick(c.Request)
+	if err != nil || pResult.Proxy == nil {
+		c.route = this.noProxy
 		this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
 	}
 
-	c.proxy = proxy
-	c.Route = route
+	c.proxy = pResult.Proxy
+	c.target = pResult.Target
+	c.route = route
 	c.Next()
 	c.mWriter.WriteHeaderNow()
 }

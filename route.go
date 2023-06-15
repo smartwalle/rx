@@ -71,7 +71,7 @@ func (this *options) buildProxy(target *url.URL) *httputil.ReverseProxy {
 }
 
 type Route struct {
-	Pattern string
+	pattern string
 	regexp  *regexp.Regexp
 	targets []*url.URL
 
@@ -106,7 +106,7 @@ func NewRoute(pattern string, targets []string, opts ...Option) (*Route, error) 
 	}
 
 	var route = &Route{}
-	route.Pattern = pattern
+	route.pattern = pattern
 	route.regexp = nRegexp
 	route.targets = nTargets
 	route.handlers = nOpts.handlers
@@ -115,10 +115,14 @@ func NewRoute(pattern string, targets []string, opts ...Option) (*Route, error) 
 	return route, nil
 }
 
+func (this *Route) Pattern() string {
+	return this.pattern
+}
+
 func (this *Route) Match(path string) bool {
 	return this.regexp.MatchString(path)
 }
 
-func (this *Route) pick(req *http.Request) (*httputil.ReverseProxy, error) {
+func (this *Route) pick(req *http.Request) (balancer.PickResult, error) {
 	return this.balancer.Pick(req)
 }

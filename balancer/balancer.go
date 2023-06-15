@@ -10,6 +10,11 @@ type BuildInfo struct {
 	Targets map[*url.URL]*httputil.ReverseProxy
 }
 
+type PickResult struct {
+	Target *url.URL
+	Proxy  *httputil.ReverseProxy
+}
+
 type Builder interface {
 	Name() string
 
@@ -17,5 +22,5 @@ type Builder interface {
 }
 
 type Balancer interface {
-	Pick(req *http.Request) (*httputil.ReverseProxy, error)
+	Pick(req *http.Request) (PickResult, error)
 }

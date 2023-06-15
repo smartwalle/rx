@@ -4,6 +4,7 @@ import (
 	"math"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 )
 
 const (
@@ -20,7 +21,8 @@ type Context struct {
 
 	handlers HandlersChain
 	proxy    *httputil.ReverseProxy
-	Route    *Route
+	target   *url.URL
+	route    *Route
 }
 
 func (c *Context) reset() {
@@ -28,11 +30,12 @@ func (c *Context) reset() {
 	c.index = -1
 	c.handlers = nil
 	c.proxy = nil
-	c.Route = nil
+	c.target = nil
+	c.route = nil
 }
 
 func (c *Context) Next() {
-	if c.Route != nil {
+	if c.route != nil {
 		c.index++
 
 		var hLen = int8(len(c.handlers))
@@ -41,17 +44,25 @@ func (c *Context) Next() {
 			c.index++
 		}
 
-		for c.index-hLen < int8(len(c.Route.handlers)) {
-			c.Route.handlers[c.index-hLen](c)
+		for c.index-hLen < int8(len(c.route.handlers)) {
+			c.route.handlers[c.index-hLen](c)
 			c.index++
 		}
 
-		hLen = int8(len(c.handlers) + len(c.Route.handlers))
+		hLen = int8(len(c.handlers) + len(c.route.handlers))
 		if c.index-hLen < 1 && c.proxy != nil {
 			c.proxy.ServeHTTP(c.Writer, c.Request)
 			c.index++
 		}
 	}
+}
+
+func (c *Context) Target() *url.URL {
+	return c.target
+}
+
+func (c *Context) Route() *Route {
+	return c.route
 }
 
 func (c *Context) IsAborted() bool {
