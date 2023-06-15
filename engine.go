@@ -57,27 +57,23 @@ func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 }
 
 func (this *Engine) handleHTTPRequest(c *Context) {
-	var route, err = this.provider.Match(c.Request)
+	route, err := this.provider.Match(c.Request)
 	if err != nil || route == nil {
 		c.Route = this.noRoute
 		this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
 	}
 
+	proxy, err := route.pick(c.Request)
+	if err != nil || proxy == nil {
+		c.Route = this.noServer
+		this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
+		return
+	}
+
+	c.proxy = proxy
 	c.Route = route
 	c.Next()
-
-	if !c.IsAborted() {
-		var target, err = c.Route.pick(c.Request)
-		if err != nil || target == nil {
-			c.reset()
-			c.handlers = nil
-			c.Route = this.noServer
-			this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
-			return
-		}
-		target.ServeHTTP(c.Writer, c.Request)
-	}
 	c.mWriter.WriteHeaderNow()
 }
 

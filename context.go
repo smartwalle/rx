@@ -3,6 +3,7 @@ package rx
 import (
 	"math"
 	"net/http"
+	"net/http/httputil"
 )
 
 const (
@@ -18,12 +19,15 @@ type Context struct {
 	index int8
 
 	handlers HandlersChain
+	proxy    *httputil.ReverseProxy
 	Route    *Route
 }
 
 func (c *Context) reset() {
 	c.Writer = &c.mWriter
 	c.index = -1
+	c.handlers = nil
+	c.proxy = nil
 	c.Route = nil
 }
 
@@ -39,6 +43,12 @@ func (c *Context) Next() {
 
 		for c.index-hLen < int8(len(c.Route.handlers)) {
 			c.Route.handlers[c.index-hLen](c)
+			c.index++
+		}
+
+		hLen = int8(len(c.handlers) + len(c.Route.handlers))
+		if c.index-hLen < 1 && c.proxy != nil {
+			c.proxy.ServeHTTP(c.Writer, c.Request)
 			c.index++
 		}
 	}
