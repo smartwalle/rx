@@ -14,8 +14,8 @@ type Engine struct {
 	provider RouteProvider
 	pool     sync.Pool
 
-	noRoute  *Route
-	noServer *Route
+	noRoute *Route
+	noProxy *Route
 }
 
 func New() *Engine {
@@ -24,7 +24,7 @@ func New() *Engine {
 		return &Context{}
 	}
 	nEngine.noRoute = &Route{}
-	nEngine.noServer = &Route{}
+	nEngine.noProxy = &Route{}
 	return nEngine
 }
 
@@ -36,8 +36,8 @@ func (this *Engine) NoRoute(handlers ...HandlerFunc) {
 	this.noRoute.handlers = handlers
 }
 
-func (this *Engine) NoServer(handlers ...HandlerFunc) {
-	this.noServer.handlers = handlers
+func (this *Engine) NoProxy(handlers ...HandlerFunc) {
+	this.noProxy.handlers = handlers
 }
 
 func (this *Engine) Load(provider RouteProvider) {
@@ -66,7 +66,7 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 
 	proxy, err := route.pick(c.Request)
 	if err != nil || proxy == nil {
-		c.Route = this.noServer
+		c.Route = this.noProxy
 		this.handleError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
 	}
