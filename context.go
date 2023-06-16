@@ -1,6 +1,7 @@
 package rx
 
 import (
+	"fmt"
 	"math"
 	"net/http"
 	"net/http/httputil"
@@ -12,6 +13,11 @@ const (
 	kContentType      = "Content-Type"
 	kAbortIndex  int8 = math.MaxInt8 >> 1
 )
+
+type rWriterWrapper struct {
+	ResponseWriter
+	context *Context
+}
 
 type Context struct {
 	mWriter responseWriter
@@ -56,10 +62,15 @@ func (c *Context) Next() {
 
 		hLen = int8(len(c.handlers) + len(c.route.handlers))
 		if c.index-hLen < 1 && c.proxy != nil {
-			c.proxy.ServeHTTP(c.Writer, c.Request)
+			c.proxy.ServeHTTP(rWriterWrapper{ResponseWriter: c.Writer, context: c}, c.Request)
 			c.index++
 		}
 	}
+}
+
+func (c *Context) Error(err error) {
+	// TODO abort
+	fmt.Println(err)
 }
 
 func (c *Context) Target() *url.URL {
