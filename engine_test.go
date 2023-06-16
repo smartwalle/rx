@@ -116,6 +116,9 @@ func TestEngine_Abort(t *testing.T) {
 			c.Status(http.StatusAlreadyReported)
 		case "/2004":
 			c.Status(http.StatusConflict)
+		case "/201":
+			c.Next()
+			c.AbortWithStatus(http.StatusBadRequest)
 		case "/400":
 			c.AbortWithStatus(http.StatusCreated)
 			c.Abort()
@@ -161,6 +164,10 @@ func TestEngine_Abort(t *testing.T) {
 		{
 			path:   "/2004", // 匹配到 /200，在 middleware 中将返回值调整为 http.StatusConflict 并且 abort
 			expect: http.StatusConflict,
+		},
+		{
+			path:   "/201", // 匹配到 /201，目标服务器返回值为 http.StatusCreated，但是在 middleware 中将返回值调整为 http.StatusBadRequest
+			expect: http.StatusBadRequest,
 		},
 		{
 			path:   "/400", // 有注册该路由，但是在 middleware 中将返回值调整为 http.StatusCreated
