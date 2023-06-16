@@ -87,8 +87,8 @@ func (c *Context) Abort() {
 
 func (c *Context) abortWithError(err error) {
 	c.Abort()
-	c.error(c, err)
 	c.Status(http.StatusInternalServerError)
+	c.error(c, err)
 	c.Writer.WriteHeaderNow()
 }
 
