@@ -182,7 +182,7 @@ func TestEngine_Error(t *testing.T) {
 	var engine = rx.New()
 	engine.Load(NewProvider("http://127.0.0.1:1100"))
 
-	engine.HandleError(func(c *rx.Context, err error) {
+	engine.ErrorHandler(func(c *rx.Context, err error) {
 		switch c.Request.URL.Path {
 		case BuildPath(http.StatusOK):
 			c.AbortWithStatus(http.StatusNotImplemented)

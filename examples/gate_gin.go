@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/smartwalle/rx"
 	"log"
+	"net/http"
 )
 
 func main() {
@@ -30,9 +32,9 @@ func main() {
 		log.Println("no route:", c.Request.URL.Path)
 	})
 
-	//s.HandleError(func(c *rx.Context, err error) {
-	//	c.AbortWithJSON(http.StatusBadRequest, fmt.Sprintf("无法访问：%s", c.Target().String()))
-	//})
+	s.ErrorHandler(func(c *rx.Context, err error) {
+		c.AbortWithJSON(http.StatusBadRequest, fmt.Sprintf("无法访问：%s", c.Target().String()))
+	})
 
 	var gate = gin.Default()
 

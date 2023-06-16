@@ -86,10 +86,10 @@ func (c *Context) Abort() {
 }
 
 func (c *Context) abortWithError(err error) {
-	if c.error != nil {
-		c.error(c, err)
-	}
-	c.AbortWithStatus(http.StatusInternalServerError)
+	c.Abort()
+	c.error(c, err)
+	c.Status(http.StatusInternalServerError)
+	c.Writer.WriteHeaderNow()
 }
 
 func (c *Context) AbortWithStatus(code int) {

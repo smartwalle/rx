@@ -46,7 +46,7 @@ func (this *Engine) NoProxy(handlers ...HandlerFunc) {
 	this.noProxy.handlers = handlers
 }
 
-func (this *Engine) HandleError(handler ErrorHandler) {
+func (this *Engine) ErrorHandler(handler ErrorHandler) {
 	if handler == nil {
 		handler = defaultErrorHandler
 	}
