@@ -93,6 +93,89 @@ func TestEngine_D1(t *testing.T) {
 	}
 }
 
+func TestEngine_Abort(t *testing.T) {
+	var backend = NewBackend()
+	defer backend.Close()
+
+	var engine = rx.New()
+	engine.Load(NewProvider(backend.URL))
+
+	engine.Use(func(c *rx.Context) {
+		switch c.Request.URL.Path {
+		case "/200":
+			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatus(http.StatusOK)
+			c.AbortWithStatus(http.StatusCreated)
+		case "/2001":
+			c.Status(http.StatusMultiStatus)
+		case "/2002":
+			c.Status(http.StatusAccepted)
+			c.Abort()
+		case "/2003":
+			c.Abort()
+			c.Status(http.StatusAlreadyReported)
+		case "/2004":
+			c.Status(http.StatusConflict)
+		case "/400":
+			c.AbortWithStatus(http.StatusCreated)
+			c.Abort()
+		}
+	}, func(c *rx.Context) {
+		switch c.Request.URL.Path {
+		case "/200":
+			t.Fatal("不应该执行到这里")
+		case "/2002":
+			t.Fatal("不应该执行到这里")
+		case "/2003":
+			t.Fatal("不应该执行到这里")
+		case "/2004":
+			c.Abort()
+		case "/400":
+			t.Fatal("不应该执行到这里")
+		}
+	})
+
+	frontend := httptest.NewServer(engine)
+	defer frontend.Close()
+
+	var tests = []struct {
+		path   string
+		expect int
+	}{
+		{
+			path:   "/200", // 有注册该路由，但是在 middleware 中将返回值调整为 http.StatusUnauthorized
+			expect: http.StatusUnauthorized,
+		},
+		{
+			path:   "/2001", // 匹配到 /200，在 middleware 中虽然有将返回值调整为 http.StatusMultiStatus，但是没有 abort，仍然以目标服务器的返回值为准
+			expect: http.StatusOK,
+		},
+		{
+			path:   "/2002", // 匹配到 /200，在 middleware 中将返回值调整为 http.StatusAccepted 并且 abort
+			expect: http.StatusAccepted,
+		},
+		{
+			path:   "/2003", // 匹配到 /200，在 middleware 中将返回值调整为 http.StatusAlreadyReported 并且 abort
+			expect: http.StatusAlreadyReported,
+		},
+		{
+			path:   "/2004", // 匹配到 /200，在 middleware 中将返回值调整为 http.StatusConflict 并且 abort
+			expect: http.StatusConflict,
+		},
+		{
+			path:   "/400", // 有注册该路由，但是在 middleware 中将返回值调整为 http.StatusCreated
+			expect: http.StatusCreated,
+		},
+	}
+
+	for _, test := range tests {
+		var rsp = Get(t, frontend, test.path)
+		if rsp.StatusCode != test.expect {
+			t.Fatalf("访问：%s 期望: %d，实际：%d \n", test.path, test.expect, rsp.StatusCode)
+		}
+	}
+}
+
 func TestEngine_NoRouteAndAbort(t *testing.T) {
 	var backend = NewBackend()
 	defer backend.Close()
