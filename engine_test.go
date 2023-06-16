@@ -5,6 +5,7 @@ import (
 	"github.com/smartwalle/rx"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -327,6 +328,58 @@ func TestEngine_D1(t *testing.T) {
 		{
 			path:   "/book/list",
 			expect: http.StatusBadGateway,
+		},
+	}
+
+	for _, test := range tests {
+		var rsp = Get(t, frontend, test.path)
+		if rsp.StatusCode != test.expect {
+			t.Fatalf("访问：%s 期望: %d，实际：%d \n", test.path, test.expect, rsp.StatusCode)
+		}
+	}
+}
+
+func TestEngine_Rewrite(t *testing.T) {
+	var userBackend = NewUserBackend()
+	defer userBackend.Close()
+
+	var provider = rx.NewListProvider()
+	provider.Add("/api/user", []string{userBackend.URL})
+
+	var engine = rx.New()
+	engine.Load(provider)
+
+	engine.Use(func(c *rx.Context) {
+		// 删除 URL Path 中的 /api
+		c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/api")
+	})
+
+	frontend := httptest.NewServer(engine)
+	defer frontend.Close()
+
+	var tests = []struct {
+		path   string
+		expect int
+	}{
+		{
+			path:   "/api/user/list",
+			expect: http.StatusOK,
+		},
+		{
+			path:   "/api/user/lists",
+			expect: http.StatusBadRequest,
+		},
+		{
+			path:   "/api/user/123",
+			expect: http.StatusOK,
+		},
+		{
+			path:   "/api/user/456",
+			expect: http.StatusOK,
+		},
+		{
+			path:   "/api/user/789",
+			expect: http.StatusBadRequest,
 		},
 	}
 
