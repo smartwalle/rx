@@ -177,6 +177,52 @@ func TestEngine_Abort(t *testing.T) {
 	}
 }
 
+func TestEngine_Error(t *testing.T) {
+	var engine = rx.New()
+	engine.Load(NewProvider("http://127.0.0.1:1100"))
+
+	engine.HandleError(func(c *rx.Context, err error) {
+		switch c.Request.URL.Path {
+		case BuildPath(http.StatusOK):
+			c.AbortWithStatus(http.StatusNotImplemented)
+		case BuildPath(http.StatusBadRequest):
+			c.AbortWithStatus(http.StatusServiceUnavailable)
+		}
+	})
+
+	frontend := httptest.NewServer(engine)
+	defer frontend.Close()
+
+	var tests = []struct {
+		path   int
+		expect int
+	}{
+		{
+			path:   http.StatusOK,
+			expect: http.StatusNotImplemented,
+		},
+		{
+			path:   2001,
+			expect: http.StatusInternalServerError,
+		},
+		{
+			path:   http.StatusBadRequest,
+			expect: http.StatusServiceUnavailable,
+		},
+		{
+			path:   http.StatusBadGateway, // provider 中没有注册该路由规则，所以返回 http.StatusBadGateway
+			expect: http.StatusBadGateway,
+		},
+	}
+
+	for _, test := range tests {
+		var rsp = Get(t, frontend, BuildPath(test.path))
+		if rsp.StatusCode != test.expect {
+			t.Fatalf("访问：%s 期望: %d，实际：%d \n", BuildPath(test.path), test.expect, rsp.StatusCode)
+		}
+	}
+}
+
 func NewUserBackend() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

@@ -22,5 +22,5 @@ type Builder interface {
 }
 
 type Balancer interface {
-	Pick(req *http.Request) PickResult
+	Pick(req *http.Request) (PickResult, error)
 }

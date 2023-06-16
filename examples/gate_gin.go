@@ -12,6 +12,7 @@ func main() {
 	var provider = rx.NewListProvider()
 	provider.Add("/user", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"})
 	provider.Add("/order", []string{"http://127.0.0.1:9920", "http://127.0.0.1:9921"})
+	provider.Add("/book", []string{"http://127.0.0.1:9930", "http://127.0.0.1:9931"})
 	provider.Add("/ws", []string{"http://127.0.0.1:9930", "http://127.0.0.1:9931"})
 
 	var s = rx.New()
@@ -28,6 +29,10 @@ func main() {
 	s.NoRoute(func(c *rx.Context) {
 		log.Println("no route:", c.Request.URL.Path)
 	})
+
+	//s.HandleError(func(c *rx.Context, err error) {
+	//	c.AbortWithJSON(http.StatusBadRequest, fmt.Sprintf("无法访问：%s", c.Target().String()))
+	//})
 
 	var gate = gin.Default()
 

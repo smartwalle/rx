@@ -1,6 +1,7 @@
 package rx
 
 import (
+	"log"
 	"net/http"
 	"sync"
 )
@@ -9,11 +10,15 @@ type HandlerFunc func(c *Context)
 
 type HandlersChain []HandlerFunc
 
+type ErrorHandler func(c *Context, err error)
+
 type Engine struct {
 	handlers HandlersChain
 	provider RouteProvider
 	pool     sync.Pool
 	noRoute  *Route
+	noProxy  *Route
+	error    ErrorHandler
 }
 
 func New() *Engine {
@@ -22,6 +27,8 @@ func New() *Engine {
 		return &Context{}
 	}
 	nEngine.noRoute = &Route{}
+	nEngine.noProxy = &Route{}
+	nEngine.error = defaultErrorHandler
 	return nEngine
 }
 
@@ -31,6 +38,17 @@ func (this *Engine) Use(middleware ...HandlerFunc) {
 
 func (this *Engine) NoRoute(handlers ...HandlerFunc) {
 	this.noRoute.handlers = handlers
+}
+
+func (this *Engine) NoProxy(handlers ...HandlerFunc) {
+	this.noProxy.handlers = handlers
+}
+
+func (this *Engine) HandleError(handler ErrorHandler) {
+	if handler == nil {
+		handler = defaultErrorHandler
+	}
+	this.error = handler
 }
 
 func (this *Engine) Load(provider RouteProvider) {
@@ -43,6 +61,7 @@ func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	c.Request = request
 	c.reset()
 	c.handlers = this.handlers
+	c.error = this.error
 
 	this.handleHTTPRequest(c)
 
@@ -50,14 +69,19 @@ func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 }
 
 func (this *Engine) handleHTTPRequest(c *Context) {
-	var route, err = this.provider.Match(c.Request)
+	route, err := this.provider.Match(c.Request)
 	if err != nil || route == nil {
 		c.route = this.noRoute
-		this.handleError(c, http.StatusNotFound, http.StatusText(http.StatusNotFound))
+		this.serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
 	}
 
-	var pResult = route.pick(c.Request)
+	pResult, err := route.pick(c.Request)
+	if err != nil || pResult.Proxy == nil {
+		c.route = this.noProxy
+		this.serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
+		return
+	}
 
 	c.proxy = pResult.Proxy
 	c.target = pResult.Target
@@ -66,7 +90,7 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 	c.mWriter.WriteHeaderNow()
 }
 
-func (this *Engine) handleError(c *Context, code int, message string) {
+func (this *Engine) serveError(c *Context, code int, message string) {
 	c.mWriter.status = code
 	c.Next()
 
@@ -80,4 +104,9 @@ func (this *Engine) handleError(c *Context, code int, message string) {
 		return
 	}
 	c.mWriter.WriteHeaderNow()
+}
+
+func defaultErrorHandler(c *Context, err error) {
+	log.Printf("proxy error: %v", err)
+	c.AbortWithStatus(http.StatusInternalServerError)
 }

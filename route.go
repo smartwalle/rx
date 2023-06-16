@@ -55,7 +55,7 @@ func (this *options) buildBalancer(targets []*url.URL) (balancer.Balancer, error
 		if proxy.ErrorHandler == nil {
 			proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, err error) {
 				if wrapper, ok := writer.(rWriterWrapper); ok {
-					wrapper.context.Error(err)
+					wrapper.context.abortWithError(err)
 				}
 			}
 		}
@@ -131,6 +131,6 @@ func (this *Route) Match(path string) bool {
 	return this.regexp.MatchString(path)
 }
 
-func (this *Route) pick(req *http.Request) balancer.PickResult {
+func (this *Route) pick(req *http.Request) (balancer.PickResult, error) {
 	return this.balancer.Pick(req)
 }

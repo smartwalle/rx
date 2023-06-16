@@ -1,7 +1,6 @@
 package rx
 
 import (
-	"fmt"
 	"math"
 	"net/http"
 	"net/http/httputil"
@@ -30,6 +29,7 @@ type Context struct {
 	proxy    *httputil.ReverseProxy
 	target   *url.URL
 	route    *Route
+	error    ErrorHandler
 
 	mu   sync.RWMutex
 	Keys map[string]interface{}
@@ -42,6 +42,7 @@ func (c *Context) reset() {
 	c.proxy = nil
 	c.target = nil
 	c.route = nil
+	c.error = nil
 	c.Keys = nil
 }
 
@@ -68,11 +69,6 @@ func (c *Context) Next() {
 	}
 }
 
-func (c *Context) Error(err error) {
-	// TODO abort
-	fmt.Println(err)
-}
-
 func (c *Context) Target() *url.URL {
 	return c.target
 }
@@ -87,6 +83,13 @@ func (c *Context) IsAborted() bool {
 
 func (c *Context) Abort() {
 	c.index = kAbortIndex
+}
+
+func (c *Context) abortWithError(err error) {
+	if c.error != nil {
+		c.error(c, err)
+	}
+	c.AbortWithStatus(http.StatusInternalServerError)
 }
 
 func (c *Context) AbortWithStatus(code int) {
