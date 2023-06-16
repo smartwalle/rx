@@ -339,7 +339,7 @@ func TestEngine_D1(t *testing.T) {
 	}
 }
 
-func TestEngine_Rewrite(t *testing.T) {
+func TestEngine_FixPath(t *testing.T) {
 	var userBackend = NewUserBackend()
 	defer userBackend.Close()
 

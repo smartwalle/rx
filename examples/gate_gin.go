@@ -19,11 +19,11 @@ func main() {
 	s.Load(provider)
 
 	s.Use(func(c *rx.Context) {
-		log.Println("middleware 1")
+		//log.Println("middleware 1")
 	})
 
 	s.Use(func(c *rx.Context) {
-		log.Println("middleware 2")
+		//log.Println("middleware 2")
 	})
 
 	s.NoRoute(func(c *rx.Context) {
