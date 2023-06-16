@@ -1,9 +1,22 @@
 package rx
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type RouteProvider interface {
 	Match(req *http.Request) (*Route, error)
+}
+
+type nilProvider struct {
+}
+
+func (this *nilProvider) Match(req *http.Request) (*Route, error) {
+	panic(`provider should be specified. 
+var provider = rx.NewListProvider()
+var engine = rx.New()
+engine.Load(provider)`)
+	return nil, nil
 }
 
 // ListProvider 路由信息管理

@@ -13,12 +13,13 @@ type HandlersChain []HandlerFunc
 type ErrorHandler func(c *Context, err error)
 
 type Engine struct {
+	pool     sync.Pool
 	handlers HandlersChain
 	provider RouteProvider
-	pool     sync.Pool
-	noRoute  *Route
-	noProxy  *Route
-	error    ErrorHandler
+
+	noRoute *Route
+	noProxy *Route
+	error   ErrorHandler
 }
 
 func New() *Engine {
@@ -26,6 +27,7 @@ func New() *Engine {
 	nEngine.pool.New = func() interface{} {
 		return &Context{}
 	}
+	nEngine.provider = &nilProvider{}
 	nEngine.noRoute = &Route{}
 	nEngine.noProxy = &Route{}
 	nEngine.error = defaultErrorHandler
@@ -52,6 +54,9 @@ func (this *Engine) HandleError(handler ErrorHandler) {
 }
 
 func (this *Engine) Load(provider RouteProvider) {
+	if provider == nil {
+		provider = &nilProvider{}
+	}
 	this.provider = provider
 }
 
@@ -70,14 +75,26 @@ func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request)
 
 func (this *Engine) handleHTTPRequest(c *Context) {
 	route, err := this.provider.Match(c.Request)
-	if err != nil || route == nil {
+	if err != nil {
+		c.route = this.noRoute
+		this.serveError(c, http.StatusBadGateway, err.Error())
+		return
+	}
+
+	if route == nil {
 		c.route = this.noRoute
 		this.serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
 	}
 
 	pResult, err := route.pick(c.Request)
-	if err != nil || pResult.Proxy == nil {
+	if err != nil {
+		c.route = this.noProxy
+		this.serveError(c, http.StatusBadGateway, err.Error())
+		return
+	}
+
+	if pResult.Proxy == nil {
 		c.route = this.noProxy
 		this.serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
