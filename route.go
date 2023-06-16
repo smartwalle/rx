@@ -38,6 +38,12 @@ type options struct {
 	handlers HandlersChain
 }
 
+func defaultProxyErrorHandler(writer http.ResponseWriter, request *http.Request, err error) {
+	if wrapper, ok := writer.(rWriterWrapper); ok {
+		wrapper.context.abortWithError(err)
+	}
+}
+
 func (this *options) buildBalancer(targets []*url.URL) (balancer.Balancer, error) {
 	if this.balancer == "" {
 		this.balancer = roundrobin.Name
@@ -53,11 +59,7 @@ func (this *options) buildBalancer(targets []*url.URL) (balancer.Balancer, error
 		var proxy = this.buildProxy(target)
 
 		if proxy.ErrorHandler == nil {
-			proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, err error) {
-				if wrapper, ok := writer.(rWriterWrapper); ok {
-					wrapper.context.abortWithError(err)
-				}
-			}
+			proxy.ErrorHandler = defaultProxyErrorHandler
 		}
 
 		if proxy != nil {
