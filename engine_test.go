@@ -279,7 +279,7 @@ func TestEngine_Error(t *testing.T) {
 		}
 	})
 
-	engine.ErrorHandler(func(c *rx.Context, err error) {
+	engine.HandleError(func(c *rx.Context, err error) {
 		switch c.Request.URL.Path {
 		case "/200":
 			c.AbortWithStatus(http.StatusNotImplemented)
@@ -296,11 +296,11 @@ func TestEngine_Error(t *testing.T) {
 		expect int
 	}{
 		{
-			path:   "/200", // 有注册该路由，目标服务器无法访问触发错误，在 ErrorHandler 中将返回值调整为 http.StatusNotImplemented
+			path:   "/200", // 有注册该路由，目标服务器无法访问触发错误，在 HandleError 中将返回值调整为 http.StatusNotImplemented
 			expect: http.StatusNotImplemented,
 		},
 		{
-			path:   "/2001", // 匹配到 /200，目标服务器无法访问触发错误，ErrorHandler 中没有处理该路由，所以返回默认 http.StatusInternalServerError
+			path:   "/2001", // 匹配到 /200，目标服务器无法访问触发错误，HandleError 中没有处理该路由，所以返回默认 http.StatusInternalServerError
 			expect: http.StatusInternalServerError,
 		},
 		{
@@ -312,7 +312,7 @@ func TestEngine_Error(t *testing.T) {
 			expect: http.StatusOK,
 		},
 		{
-			path:   "/400", // 有注册该路由，目标服务器无法访问触发错误，在 ErrorHandler 中将返回值调整为 http.StatusServiceUnavailable
+			path:   "/400", // 有注册该路由，目标服务器无法访问触发错误，在 HandleError 中将返回值调整为 http.StatusServiceUnavailable
 			expect: http.StatusServiceUnavailable,
 		},
 		{

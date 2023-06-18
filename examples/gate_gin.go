@@ -32,7 +32,7 @@ func main() {
 		log.Println("no route:", c.Request.URL.Path)
 	})
 
-	s.ErrorHandler(func(c *rx.Context, err error) {
+	s.HandleError(func(c *rx.Context, err error) {
 		c.AbortWithJSON(http.StatusBadRequest, fmt.Sprintf("无法访问：%s", c.Target().String()))
 	})
 
