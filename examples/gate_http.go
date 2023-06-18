@@ -29,8 +29,5 @@ func main() {
 		log.Println("no route:", c.Request.URL.Path)
 	})
 
-	http.Handle("/", s)
-	// or
-	// http.HandleFunc("/", s.ServeHTTP)
-	http.ListenAndServe(":9901", nil)
+	http.ListenAndServe(":9901", s)
 }
