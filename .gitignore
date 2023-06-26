@@ -20,4 +20,3 @@
 *.iml
 .DS_Store
 *.log
-go.sum
