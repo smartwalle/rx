@@ -34,7 +34,6 @@ func userServer(port string) {
 
 	s.GET("/user/sse", func(context *gin.Context) {
 		context.Writer.Header().Add("Content-Type", "text/event-stream")
-		context.Writer.Header().Add("Cache-Control", "text/no-cache")
 		context.Writer.Header().Add("Cache-Control", "no-cache")
 
 		var idx = 0
