@@ -12,7 +12,23 @@ import (
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 
+	var rHandler = func(c *rx.Context) {
+		defer func() {
+			if v := recover(); v != nil {
+				if err, ok := v.(error); ok {
+					if errors.Is(err, http.ErrAbortHandler) {
+						return
+					}
+				}
+				panic(v)
+			}
+		}()
+		c.Next()
+	}
+
 	var provider = rx.NewListProvider()
+	provider.Add("/user/sse", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"}, rx.WithHandlers(rHandler))
+	provider.Add("/user/chunk", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"}, rx.WithHandlers(rHandler))
 	provider.Add("/user", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"})
 	provider.Add("/order", []string{"http://127.0.0.1:9920", "http://127.0.0.1:9921"})
 	provider.Add("/book", []string{"http://127.0.0.1:9930", "http://127.0.0.1:9931"})
@@ -46,17 +62,6 @@ func main() {
 	//	s.ServeHTTP(context.Writer, context.Request)
 	//})
 	gate.NoRoute(func(context *gin.Context) {
-		defer func() {
-			if v := recover(); v != nil {
-				if err, ok := v.(error); ok {
-					if errors.Is(err, http.ErrAbortHandler) {
-						return
-					}
-				}
-				panic(v)
-			}
-		}()
-
 		s.ServeHTTP(context.Writer, context.Request)
 	})
 
