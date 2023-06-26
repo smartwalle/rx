@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/smartwalle/rx"
@@ -45,6 +46,17 @@ func main() {
 	//	s.ServeHTTP(context.Writer, context.Request)
 	//})
 	gate.NoRoute(func(context *gin.Context) {
+		defer func() {
+			if v := recover(); v != nil {
+				if err, ok := v.(error); ok {
+					if errors.Is(err, http.ErrAbortHandler) {
+						return
+					}
+				}
+				panic(v)
+			}
+		}()
+
 		s.ServeHTTP(context.Writer, context.Request)
 	})
 
