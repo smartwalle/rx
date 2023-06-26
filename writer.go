@@ -122,7 +122,7 @@ func (w *responseWriter) Flush() {
 	w.ResponseWriter.(http.Flusher).Flush()
 }
 
-func (w *responseWriter) Pusher() (pusher http.Pusher) {
+func (w *responseWriter) Pusher() http.Pusher {
 	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
 		return pusher
 	}
