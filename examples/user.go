@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
+	"time"
 )
 
 func main() {
@@ -29,6 +30,44 @@ func userServer(port string) {
 	s.GET("/user/list", func(context *gin.Context) {
 		log.Println(port)
 		context.Writer.WriteString(fmt.Sprintf("从【%s】获取【用户列表】", port))
+	})
+
+	s.GET("/user/sse", func(context *gin.Context) {
+		context.Writer.Header().Add("Content-Type", "text/event-stream")
+		context.Writer.Header().Add("Cache-Control", "text/no-cache")
+		context.Writer.Header().Add("Cache-Control", "no-cache")
+
+		var idx = 0
+		for {
+			select {
+			case <-context.Request.Context().Done():
+				return
+			default:
+				context.Writer.WriteString(fmt.Sprintf("sse %d\n", idx))
+				context.Writer.Flush()
+				time.Sleep(time.Second)
+				idx++
+			}
+		}
+	})
+
+	s.GET("/user/chunk", func(context *gin.Context) {
+		context.Writer.Header().Add("Content-Type", "text/plain")
+		context.Writer.Header().Add("Transfer-Encoding", "chunked")
+		context.Writer.Header().Add("X-Content-Type-Options", "nosniff")
+
+		var idx = 0
+		for {
+			select {
+			case <-context.Request.Context().Done():
+				return
+			default:
+				context.Writer.WriteString(fmt.Sprintf("chunk %d\n", idx))
+				context.Writer.Flush()
+				time.Sleep(time.Second)
+				idx++
+			}
+		}
 	})
 
 	s.Run(":" + port)
