@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/smartwalle/rx/balancer"
 	"net/http"
-	"sync"
+	"sync/atomic"
 )
 
 const (
@@ -30,23 +30,20 @@ func (this *rrBuilder) Build(info balancer.BuildInfo) (balancer.Balancer, error)
 	for key, value := range info.Targets {
 		nTargets = append(nTargets, balancer.PickResult{Target: key, Proxy: value})
 	}
-	return &rrBalancer{targets: nTargets, next: 0}, nil
+	return &rrBalancer{targets: nTargets, size: len(nTargets), offset: 0}, nil
 }
 
 type rrBalancer struct {
 	targets []balancer.PickResult
-	next    int
-	mu      sync.Mutex
+	size    int
+	offset  uint32
 }
 
 func (this *rrBalancer) Pick(req *http.Request) (balancer.PickResult, error) {
-	if len(this.targets) == 0 {
+	if this.size == 0 {
 		return balancer.PickResult{}, errors.New("no targets is available")
 	}
-
-	this.mu.Lock()
-	target := this.targets[this.next]
-	this.next = (this.next + 1) % len(this.targets)
-	this.mu.Unlock()
+	var index = int(atomic.AddUint32(&this.offset, 1)-1) % this.size
+	target := this.targets[index]
 	return target, nil
 }
