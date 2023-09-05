@@ -12,7 +12,7 @@ import (
 func NewReverseProxyWithTLS(target *url.URL) *httputil.ReverseProxy {
 	var proxy = httputil.NewSingleHostReverseProxy(target)
 	var director = proxy.Director
-	proxy.Transport = &http.Transport{DialTLSContext: dialTLS}
+	proxy.Transport = &http.Transport{DialTLSContext: DialTLS}
 	proxy.Director = func(req *http.Request) {
 		director(req)
 		req.Host = req.URL.Host
@@ -20,7 +20,7 @@ func NewReverseProxyWithTLS(target *url.URL) *httputil.ReverseProxy {
 	return proxy
 }
 
-func dialTLS(ctx context.Context, network, addr string) (net.Conn, error) {
+func DialTLS(ctx context.Context, network, addr string) (net.Conn, error) {
 	conn, err := net.Dial(network, addr)
 	if err != nil {
 		return nil, err
