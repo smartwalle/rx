@@ -2,6 +2,7 @@ package rx_test
 
 import (
 	"github.com/smartwalle/rx"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -90,6 +91,7 @@ func TestEngine_D1(t *testing.T) {
 		if rsp.StatusCode != test.expect {
 			t.Fatalf("访问：%s 期望: %d，实际：%d \n", test.path, test.expect, rsp.StatusCode)
 		}
+		io.Copy(io.Discard, rsp.Body)
 		rsp.Body.Close()
 	}
 }
@@ -181,6 +183,7 @@ func TestEngine_Abort(t *testing.T) {
 		if rsp.StatusCode != test.expect {
 			t.Fatalf("访问：%s 期望: %d，实际：%d \n", test.path, test.expect, rsp.StatusCode)
 		}
+		io.Copy(io.Discard, rsp.Body)
 		rsp.Body.Close()
 	}
 }
@@ -265,6 +268,7 @@ func TestEngine_NoRouteAndAbort(t *testing.T) {
 		if rsp.StatusCode != test.expect {
 			t.Fatalf("访问：%s 期望: %d，实际：%d \n", test.path, test.expect, rsp.StatusCode)
 		}
+		io.Copy(io.Discard, rsp.Body)
 		rsp.Body.Close()
 	}
 }
@@ -329,6 +333,7 @@ func TestEngine_Error(t *testing.T) {
 		if rsp.StatusCode != test.expect {
 			t.Fatalf("访问：%s 期望: %d，实际：%d \n", test.path, test.expect, rsp.StatusCode)
 		}
+		io.Copy(io.Discard, rsp.Body)
 		rsp.Body.Close()
 	}
 }
@@ -445,6 +450,7 @@ func TestEngine_D2(t *testing.T) {
 		if rsp.StatusCode != test.expect {
 			t.Fatalf("访问：%s 期望: %d，实际：%d \n", test.path, test.expect, rsp.StatusCode)
 		}
+		io.Copy(io.Discard, rsp.Body)
 		rsp.Body.Close()
 	}
 }
@@ -502,6 +508,7 @@ func TestEngine_FixPath(t *testing.T) {
 		if rsp.StatusCode != test.expect {
 			t.Fatalf("访问：%s 期望: %d，实际：%d \n", test.path, test.expect, rsp.StatusCode)
 		}
+		io.Copy(io.Discard, rsp.Body)
 		rsp.Body.Close()
 	}
 }
