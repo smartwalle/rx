@@ -44,19 +44,19 @@ func defaultProxyErrorHandler(writer http.ResponseWriter, request *http.Request,
 	}
 }
 
-func (this *options) buildBalancer(targets []*url.URL) (balancer.Balancer, error) {
-	if this.balancer == "" {
-		this.balancer = roundrobin.Name
+func (opts *options) buildBalancer(targets []*url.URL) (balancer.Balancer, error) {
+	if opts.balancer == "" {
+		opts.balancer = roundrobin.Name
 	}
 
-	var bBuilder = GetBalancer(this.balancer)
+	var bBuilder = GetBalancer(opts.balancer)
 	if bBuilder == nil {
-		return nil, fmt.Errorf("unknown balancer %s", this.balancer)
+		return nil, fmt.Errorf("unknown balancer %s", opts.balancer)
 	}
 
 	var proxies = make(map[*url.URL]*httputil.ReverseProxy)
 	for _, target := range targets {
-		var proxy = this.buildProxy(target)
+		var proxy = opts.buildProxy(target)
 		if proxy.ErrorHandler == nil {
 			proxy.ErrorHandler = defaultProxyErrorHandler
 		}
@@ -69,9 +69,9 @@ func (this *options) buildBalancer(targets []*url.URL) (balancer.Balancer, error
 	return bBuilder.Build(info)
 }
 
-func (this *options) buildProxy(target *url.URL) *httputil.ReverseProxy {
-	if this.builder != nil {
-		return this.builder(target)
+func (opts *options) buildProxy(target *url.URL) *httputil.ReverseProxy {
+	if opts.builder != nil {
+		return opts.builder(target)
 	}
 	return httputil.NewSingleHostReverseProxy(target)
 }
@@ -121,14 +121,14 @@ func NewRoute(pattern string, targets []string, opts ...Option) (*Route, error) 
 	return route, nil
 }
 
-func (this *Route) Pattern() string {
-	return this.pattern
+func (route *Route) Pattern() string {
+	return route.pattern
 }
 
-func (this *Route) Match(path string) bool {
-	return this.regexp.MatchString(path)
+func (route *Route) Match(path string) bool {
+	return route.regexp.MatchString(path)
 }
 
-func (this *Route) pick(req *http.Request) (balancer.PickResult, error) {
-	return this.balancer.Pick(req)
+func (route *Route) pick(req *http.Request) (balancer.PickResult, error) {
+	return route.balancer.Pick(req)
 }

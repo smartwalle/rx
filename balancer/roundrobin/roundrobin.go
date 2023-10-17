@@ -18,11 +18,11 @@ func New() balancer.Builder {
 type rrBuilder struct {
 }
 
-func (this *rrBuilder) Name() string {
+func (rr *rrBuilder) Name() string {
 	return Name
 }
 
-func (this *rrBuilder) Build(info balancer.BuildInfo) (balancer.Balancer, error) {
+func (rr *rrBuilder) Build(info balancer.BuildInfo) (balancer.Balancer, error) {
 	if len(info.Targets) == 0 {
 		return nil, errors.New("no targets is available")
 	}
@@ -39,11 +39,11 @@ type rrBalancer struct {
 	offset  uint32
 }
 
-func (this *rrBalancer) Pick(req *http.Request) (balancer.PickResult, error) {
-	if this.size == 0 {
+func (rr *rrBalancer) Pick(req *http.Request) (balancer.PickResult, error) {
+	if rr.size == 0 {
 		return balancer.PickResult{}, errors.New("no targets is available")
 	}
-	var index = int(atomic.AddUint32(&this.offset, 1)-1) % this.size
-	target := this.targets[index]
+	var index = int(atomic.AddUint32(&rr.offset, 1)-1) % rr.size
+	target := rr.targets[index]
 	return target, nil
 }

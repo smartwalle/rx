@@ -11,7 +11,7 @@ type RouteProvider interface {
 type nilProvider struct {
 }
 
-func (this *nilProvider) Match(req *http.Request) (*Route, error) {
+func (p *nilProvider) Match(req *http.Request) (*Route, error) {
 	panic(`provider should be specified. 
 var provider = rx.NewListProvider()
 var engine = rx.New()
@@ -31,9 +31,9 @@ func NewListProvider() *ListProvider {
 }
 
 // Match 匹配路由
-func (this *ListProvider) Match(req *http.Request) (*Route, error) {
+func (p *ListProvider) Match(req *http.Request) (*Route, error) {
 	var path = req.URL.Path
-	for _, route := range this.routes {
+	for _, route := range p.routes {
 		if route.Match(path) {
 			return route, nil
 		}
@@ -50,11 +50,11 @@ func (this *ListProvider) Match(req *http.Request) (*Route, error) {
 // provider.Add("/user", []string{"http://xxx"})
 //
 // provider.Add("/u", []string{"http://xxx"})
-func (this *ListProvider) Add(pattern string, targets []string, opts ...Option) error {
+func (p *ListProvider) Add(pattern string, targets []string, opts ...Option) error {
 	var route, err = NewRoute(pattern, targets, opts...)
 	if err != nil {
 		return err
 	}
-	this.routes = append(this.routes, route)
+	p.routes = append(p.routes, route)
 	return nil
 }

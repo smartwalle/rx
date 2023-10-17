@@ -34,69 +34,69 @@ func New() *Engine {
 	return nEngine
 }
 
-func (this *Engine) Use(middleware ...HandlerFunc) {
-	this.handlers = append(this.handlers, middleware...)
+func (e *Engine) Use(middleware ...HandlerFunc) {
+	e.handlers = append(e.handlers, middleware...)
 }
 
-func (this *Engine) NoRoute(handlers ...HandlerFunc) {
-	this.noRoute.handlers = handlers
+func (e *Engine) NoRoute(handlers ...HandlerFunc) {
+	e.noRoute.handlers = handlers
 }
 
-func (this *Engine) NoProxy(handlers ...HandlerFunc) {
-	this.noProxy.handlers = handlers
+func (e *Engine) NoProxy(handlers ...HandlerFunc) {
+	e.noProxy.handlers = handlers
 }
 
-func (this *Engine) HandleError(handler ErrorHandler) {
+func (e *Engine) HandleError(handler ErrorHandler) {
 	if handler == nil {
 		handler = defaultErrorHandler
 	}
-	this.error = handler
+	e.error = handler
 }
 
-func (this *Engine) Load(provider RouteProvider) {
+func (e *Engine) Load(provider RouteProvider) {
 	if provider == nil {
 		provider = &nilProvider{}
 	}
-	this.provider = provider
+	e.provider = provider
 }
 
-func (this *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	c := this.pool.Get().(*Context)
+func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	c := e.pool.Get().(*Context)
 	c.mWriter.reset(writer)
 	c.Request = request
 	c.reset()
-	c.handlers = this.handlers
-	c.error = this.error
+	c.handlers = e.handlers
+	c.error = e.error
 
-	this.handleHTTPRequest(c)
+	e.handleHTTPRequest(c)
 
-	this.pool.Put(c)
+	e.pool.Put(c)
 }
 
-func (this *Engine) handleHTTPRequest(c *Context) {
-	route, err := this.provider.Match(c.Request)
+func (e *Engine) handleHTTPRequest(c *Context) {
+	route, err := e.provider.Match(c.Request)
 	if err != nil {
-		c.route = this.noRoute
-		this.serveError(c, http.StatusBadGateway, err.Error())
+		c.route = e.noRoute
+		e.serveError(c, http.StatusBadGateway, err.Error())
 		return
 	}
 
 	if route == nil {
-		c.route = this.noRoute
-		this.serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
+		c.route = e.noRoute
+		e.serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
 	}
 
 	pResult, err := route.pick(c.Request)
 	if err != nil {
-		c.route = this.noProxy
-		this.serveError(c, http.StatusBadGateway, err.Error())
+		c.route = e.noProxy
+		e.serveError(c, http.StatusBadGateway, err.Error())
 		return
 	}
 
 	if pResult.Proxy == nil {
-		c.route = this.noProxy
-		this.serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
+		c.route = e.noProxy
+		e.serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
 	}
 
@@ -107,7 +107,7 @@ func (this *Engine) handleHTTPRequest(c *Context) {
 	c.mWriter.WriteHeaderNow()
 }
 
-func (this *Engine) serveError(c *Context, code int, message string) {
+func (e *Engine) serveError(c *Context, code int, message string) {
 	c.mWriter.status = code
 	c.Next()
 
