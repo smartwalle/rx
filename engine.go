@@ -15,10 +15,9 @@ type ErrorHandler func(c *Context, err error)
 type Engine struct {
 	pool     sync.Pool
 	handlers HandlersChain
-	provider RouteProvider
+	router   Router
 
-	noRoute *Route
-	noProxy *Route
+	noRoute Route
 	error   ErrorHandler
 }
 
@@ -27,9 +26,8 @@ func New() *Engine {
 	nEngine.pool.New = func() interface{} {
 		return &Context{}
 	}
-	nEngine.provider = &nilProvider{}
-	nEngine.noRoute = &Route{}
-	nEngine.noProxy = &Route{}
+	nEngine.router = &nonRouter{}
+	nEngine.noRoute = NewLocalRoute("")
 	nEngine.error = defaultErrorHandler
 	return nEngine
 }
@@ -39,11 +37,7 @@ func (e *Engine) Use(middleware ...HandlerFunc) {
 }
 
 func (e *Engine) NoRoute(handlers ...HandlerFunc) {
-	e.noRoute.handlers = handlers
-}
-
-func (e *Engine) NoProxy(handlers ...HandlerFunc) {
-	e.noProxy.handlers = handlers
+	e.noRoute = NewLocalRoute("", handlers...)
 }
 
 func (e *Engine) HandleError(handler ErrorHandler) {
@@ -53,11 +47,11 @@ func (e *Engine) HandleError(handler ErrorHandler) {
 	e.error = handler
 }
 
-func (e *Engine) Load(provider RouteProvider) {
-	if provider == nil {
-		provider = &nilProvider{}
+func (e *Engine) Load(router Router) {
+	if router == nil {
+		router = &nonRouter{}
 	}
-	e.provider = provider
+	e.router = router
 }
 
 func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -74,41 +68,26 @@ func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (e *Engine) handleHTTPRequest(c *Context) {
-	route, err := e.provider.Match(c.Request)
+	route, err := e.router.Match(c.Request)
 	if err != nil {
-		c.route = e.noRoute
-		e.serveError(c, http.StatusBadGateway, err.Error())
+		e.serveError(c, e.noRoute, http.StatusBadGateway, err.Error())
 		return
 	}
 
 	if route == nil {
-		c.route = e.noRoute
-		e.serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
+		e.serveError(c, e.noRoute, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
 		return
 	}
 
-	pResult, err := route.pick(c.Request)
-	if err != nil {
-		c.route = e.noProxy
-		e.serveError(c, http.StatusBadGateway, err.Error())
-		return
-	}
-
-	if pResult.Proxy == nil {
-		c.route = e.noProxy
-		e.serveError(c, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
-		return
-	}
-
-	c.proxy = pResult.Proxy
-	c.target = pResult.Target
 	c.route = route
 	c.Next()
 	c.mWriter.WriteHeaderNow()
 }
 
-func (e *Engine) serveError(c *Context, code int, message string) {
+func (e *Engine) serveError(c *Context, route Route, code int, message string) {
 	c.mWriter.status = code
+	c.route = route
+	c.index = -1
 	c.Next()
 
 	if c.mWriter.Written() {

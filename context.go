@@ -3,8 +3,6 @@ package rx
 import (
 	"math"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"sync"
 )
 
@@ -26,9 +24,7 @@ type Context struct {
 	index int8
 
 	handlers HandlersChain
-	proxy    *httputil.ReverseProxy
-	target   *url.URL
-	route    *Route
+	route    Route
 	error    ErrorHandler
 
 	mu   sync.RWMutex
@@ -39,8 +35,6 @@ func (c *Context) reset() {
 	c.Writer = &c.mWriter
 	c.index = -1
 	c.handlers = nil
-	c.proxy = nil
-	c.target = nil
 	c.route = nil
 	c.error = nil
 	c.Keys = nil
@@ -56,24 +50,23 @@ func (c *Context) Next() {
 			c.index++
 		}
 
-		for c.index-hLen < int8(len(c.route.handlers)) {
-			c.route.handlers[c.index-hLen](c)
+		routeHandlers := c.route.Handlers()
+		for c.index-hLen < int8(len(routeHandlers)) {
+			routeHandlers[c.index-hLen](c)
 			c.index++
 		}
 
-		hLen = int8(len(c.handlers) + len(c.route.handlers))
-		if c.index-hLen < 1 && c.proxy != nil {
-			c.proxy.ServeHTTP(rWriterWrapper{ResponseWriter: c.Writer, context: c}, c.Request)
+		hLen = int8(len(c.handlers) + len(routeHandlers))
+		if c.index-hLen < 1 {
+			if err := c.route.Serve(c); err != nil {
+				c.abortWithError(err)
+			}
 			c.index++
 		}
 	}
 }
 
-func (c *Context) Target() *url.URL {
-	return c.target
-}
-
-func (c *Context) Route() *Route {
+func (c *Context) Route() Route {
 	return c.route
 }
 

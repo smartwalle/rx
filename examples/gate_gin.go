@@ -2,12 +2,43 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/smartwalle/rx"
 	"log"
 	"net/http"
+	"regexp"
 )
+
+type gateGinRouter struct {
+	routes []gateGinRoute
+}
+
+type gateGinRoute struct {
+	regexp *regexp.Regexp
+	route  rx.Route
+}
+
+func (r *gateGinRouter) Add(pattern string, targets []string, opts ...rx.Option) error {
+	route, err := rx.NewProxyRoute(pattern, targets, opts...)
+	if err != nil {
+		return err
+	}
+	nRegexp, err := regexp.Compile(pattern)
+	if err != nil {
+		return err
+	}
+	r.routes = append(r.routes, gateGinRoute{regexp: nRegexp, route: route})
+	return nil
+}
+
+func (r *gateGinRouter) Match(req *http.Request) (rx.Route, error) {
+	for _, route := range r.routes {
+		if route.regexp.MatchString(req.URL.Path) {
+			return route.route, nil
+		}
+	}
+	return nil, nil
+}
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
@@ -26,7 +57,7 @@ func main() {
 		c.Next()
 	}
 
-	var provider = rx.NewListProvider()
+	var provider = &gateGinRouter{}
 	provider.Add("/user/sse", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"}, rx.WithHandlers(rHandler))
 	provider.Add("/user/chunk", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"}, rx.WithHandlers(rHandler))
 	provider.Add("/user", []string{"http://127.0.0.1:9910", "http://127.0.0.1:9911"})
@@ -50,7 +81,7 @@ func main() {
 	})
 
 	s.HandleError(func(c *rx.Context, err error) {
-		c.AbortWithJSON(http.StatusBadRequest, fmt.Sprintf("无法访问：%s", c.Target().String()))
+		c.AbortWithJSON(http.StatusBadRequest, "无法访问后端服务")
 	})
 
 	var gate = gin.Default()

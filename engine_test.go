@@ -34,8 +34,8 @@ func NewBackend() *httptest.Server {
 	}))
 }
 
-func NewProvider(host string) rx.RouteProvider {
-	var provider = rx.NewListProvider()
+func NewProvider(host string) rx.Router {
+	var provider = newTestRouter()
 	provider.Add("/200", []string{host})
 	provider.Add("/201", []string{host})
 	provider.Add("/400", []string{host})
@@ -375,7 +375,7 @@ func TestEngine_D2(t *testing.T) {
 	var orderBackend = NewOrderBackend()
 	defer orderBackend.Close()
 
-	var provider = rx.NewListProvider()
+	var provider = newTestRouter()
 	provider.Add("/user", []string{userBackend.URL})
 	provider.Add("/order", []string{orderBackend.URL})
 
@@ -459,7 +459,7 @@ func TestEngine_FixPath(t *testing.T) {
 	var userBackend = NewUserBackend()
 	defer userBackend.Close()
 
-	var provider = rx.NewListProvider()
+	var provider = newTestRouter()
 	provider.Add("/api/user", []string{userBackend.URL})
 
 	var engine = rx.New()

@@ -2,12 +2,12 @@ package rx
 
 import (
 	"fmt"
-	"github.com/smartwalle/rx/balancer"
-	"github.com/smartwalle/rx/balancer/roundrobin"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"regexp"
+
+	"github.com/smartwalle/rx/balancer"
+	"github.com/smartwalle/rx/balancer/roundrobin"
 )
 
 type ProxyBuilder func(target *url.URL) *httputil.ReverseProxy
@@ -76,28 +76,29 @@ func (opts *options) buildProxy(target *url.URL) *httputil.ReverseProxy {
 	return httputil.NewSingleHostReverseProxy(target)
 }
 
-type Route struct {
-	pattern string
-	regexp  *regexp.Regexp
-	targets []*url.URL
+// Route 表示 Router 已经匹配到的处理目标。
+type Route interface {
+	Pattern() string
+	Handlers() HandlersChain
+	Serve(c *Context) error
+}
 
+type ProxyRoute struct {
+	pattern  string
 	handlers HandlersChain
+	targets  []*url.URL
 	balancer balancer.Balancer
 }
 
-func NewRoute(pattern string, targets []string, opts ...Option) (*Route, error) {
-	nRegexp, err := regexp.Compile(pattern)
-	if err != nil {
-		return nil, err
-	}
-
-	var nTargets = make([]*url.URL, 0, len(targets))
+// NewProxyRoute 创建反向代理路由。
+func NewProxyRoute(pattern string, targets []string, opts ...Option) (*ProxyRoute, error) {
+	var targetURLs = make([]*url.URL, 0, len(targets))
 	for _, target := range targets {
 		nURL, err := url.Parse(target)
 		if err != nil {
 			return nil, err
 		}
-		nTargets = append(nTargets, nURL)
+		targetURLs = append(targetURLs, nURL)
 	}
 
 	var nOpts = &options{}
@@ -106,29 +107,64 @@ func NewRoute(pattern string, targets []string, opts ...Option) (*Route, error) 
 			opt(nOpts)
 		}
 	}
-	nBalancer, err := nOpts.buildBalancer(nTargets)
+	balancer, err := nOpts.buildBalancer(targetURLs)
 	if err != nil {
 		return nil, err
 	}
 
-	var route = &Route{}
+	var route = &ProxyRoute{}
 	route.pattern = pattern
-	route.regexp = nRegexp
-	route.targets = nTargets
 	route.handlers = nOpts.handlers
-	route.balancer = nBalancer
+	route.targets = targetURLs
+	route.balancer = balancer
 
 	return route, nil
 }
 
-func (route *Route) Pattern() string {
+func (route *ProxyRoute) Pattern() string {
 	return route.pattern
 }
 
-func (route *Route) Match(path string) bool {
-	return route.regexp.MatchString(path)
+func (route *ProxyRoute) Handlers() HandlersChain {
+	return route.handlers
 }
 
-func (route *Route) pick(req *http.Request) (balancer.PickResult, error) {
-	return route.balancer.Pick(req)
+func (route *ProxyRoute) Serve(c *Context) error {
+	if route == nil || route.balancer == nil {
+		return fmt.Errorf("no proxy")
+	}
+	result, err := route.balancer.Pick(c.Request)
+	if err != nil {
+		return err
+	}
+	if result.Proxy == nil {
+		return fmt.Errorf("no proxy")
+	}
+	result.Proxy.ServeHTTP(rWriterWrapper{ResponseWriter: c.Writer, context: c}, c.Request)
+	return nil
+}
+
+type LocalRoute struct {
+	pattern  string
+	handlers HandlersChain
+}
+
+// NewLocalRoute 创建只执行本地处理函数的路由。
+func NewLocalRoute(pattern string, handlers ...HandlerFunc) *LocalRoute {
+	var route = &LocalRoute{}
+	route.pattern = pattern
+	route.handlers = handlers
+	return route
+}
+
+func (route *LocalRoute) Pattern() string {
+	return route.pattern
+}
+
+func (route *LocalRoute) Handlers() HandlersChain {
+	return route.handlers
+}
+
+func (route *LocalRoute) Serve(c *Context) error {
+	return nil
 }
