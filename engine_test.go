@@ -1,12 +1,13 @@
 package rx_test
 
 import (
-	"github.com/smartwalle/rx"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/smartwalle/rx"
 )
 
 func Get(t *testing.T, server *httptest.Server, path string) *http.Response {
@@ -47,7 +48,7 @@ func TestEngine_D1(t *testing.T) {
 	defer backend.Close()
 
 	var engine = rx.New()
-	engine.Load(NewProvider(backend.URL))
+	engine.UseRouter(NewProvider(backend.URL))
 
 	frontend := httptest.NewServer(engine)
 	defer frontend.Close()
@@ -101,7 +102,7 @@ func TestEngine_Abort(t *testing.T) {
 	defer backend.Close()
 
 	var engine = rx.New()
-	engine.Load(NewProvider(backend.URL))
+	engine.UseRouter(NewProvider(backend.URL))
 
 	engine.Use(func(c *rx.Context) {
 		switch c.Request.URL.Path {
@@ -193,7 +194,7 @@ func TestEngine_NoRouteAndAbort(t *testing.T) {
 	defer backend.Close()
 
 	var engine = rx.New()
-	engine.Load(NewProvider(backend.URL))
+	engine.UseRouter(NewProvider(backend.URL))
 
 	engine.Use(func(c *rx.Context) {
 		switch c.Request.URL.Path {
@@ -275,7 +276,7 @@ func TestEngine_NoRouteAndAbort(t *testing.T) {
 
 func TestEngine_Error(t *testing.T) {
 	var engine = rx.New()
-	engine.Load(NewProvider("http://127.0.0.1:1100"))
+	engine.UseRouter(NewProvider("http://127.0.0.1:1100"))
 
 	engine.Use(func(c *rx.Context) {
 		switch c.Request.URL.Path {
@@ -380,7 +381,7 @@ func TestEngine_D2(t *testing.T) {
 	provider.Add("/order", []string{orderBackend.URL})
 
 	var engine = rx.New()
-	engine.Load(provider)
+	engine.UseRouter(provider)
 
 	engine.Use(func(c *rx.Context) {
 		c.Set("kyo", "first")
@@ -463,7 +464,7 @@ func TestEngine_FixPath(t *testing.T) {
 	provider.Add("/api/user", []string{userBackend.URL})
 
 	var engine = rx.New()
-	engine.Load(provider)
+	engine.UseRouter(provider)
 
 	engine.Use(func(c *rx.Context) {
 		switch c.Request.URL.Path {

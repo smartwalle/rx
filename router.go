@@ -1,20 +1,16 @@
 package rx
 
-import (
-	"net/http"
-)
-
-// Router 负责根据请求匹配并返回 Route。
+// Router 负责根据 method 和 path 匹配并返回 Route。
 type Router interface {
-	Match(req *http.Request) (Route, error)
+	Match(method string, path string, params Params) (Route, Params, error)
 }
 
 type nonRouter struct {
 }
 
-func (p *nonRouter) Match(req *http.Request) (Route, error) {
+func (p *nonRouter) Match(method string, path string, params Params) (Route, Params, error) {
 	panic(`router should be specified. 
 var router = yourRouter{}
 var engine = rx.New()
-engine.Load(router)`)
+engine.UseRouter(router)`)
 }

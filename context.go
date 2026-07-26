@@ -1,40 +1,77 @@
 package rx
 
 import (
+	"context"
 	"math"
 	"net/http"
 	"sync"
 )
 
 const (
-	kContentType      = "Content-Type"
-	kAbortIndex  int8 = math.MaxInt8 >> 1
+	kContentType         = "Content-Type"
+	kAbortIndex     int8 = math.MaxInt8 >> 1
+	kParamsCapacity      = 4
 )
 
-type rWriterWrapper struct {
+type writerWrapper struct {
 	ResponseWriter
 	context *Context
 }
 
+// Param 是一次路径匹配得到的单个参数。
+type Param struct {
+	// Key 是规则中声明的参数名，不包含前缀的 : 或 *。
+	Key string
+
+	// Value 是输入路径中被该参数捕获到的原始字符串。
+	Value string
+}
+
+// Params 是按规则中参数出现顺序保存的参数列表。
+type Params []Param
+
+// Get 返回指定名称的参数。
+func (ps Params) Get(name string) (string, bool) {
+	for _, item := range ps {
+		if item.Key == name {
+			return item.Value, true
+		}
+	}
+	return "", false
+}
+
+// ByName 返回指定名称的参数；不存在时返回空字符串。
+func (ps Params) ByName(name string) string {
+	value, _ := ps.Get(name)
+	return value
+}
+
 type Context struct {
-	mWriter responseWriter
+	context.Context
+
 	Request *http.Request
 	Writer  ResponseWriter
 
+	writer responseWriter
+	params Params
+
 	index int8
 
-	handlers HandlersChain
-	route    Route
-	error    ErrorHandler
+	route Route
+	error ErrorHandler
 
 	mu   sync.RWMutex
 	Keys map[string]interface{}
 }
 
-func (c *Context) reset() {
-	c.Writer = &c.mWriter
+func (c *Context) reset(writer http.ResponseWriter) {
+	c.writer.reset(writer)
+	c.Writer = &c.writer
+	if c.params == nil {
+		c.params = make(Params, 0, kParamsCapacity)
+	}
+	c.params = c.params[:0]
 	c.index = -1
-	c.handlers = nil
 	c.route = nil
 	c.error = nil
 	c.Keys = nil
@@ -44,20 +81,13 @@ func (c *Context) Next() {
 	if c.route != nil {
 		c.index++
 
-		var hLen = int8(len(c.handlers))
-		for c.index < hLen {
-			c.handlers[c.index](c)
+		handlers := c.route.Handlers()
+		for c.index < int8(len(handlers)) {
+			handlers[c.index](c)
 			c.index++
 		}
 
-		routeHandlers := c.route.Handlers()
-		for c.index-hLen < int8(len(routeHandlers)) {
-			routeHandlers[c.index-hLen](c)
-			c.index++
-		}
-
-		hLen = int8(len(c.handlers) + len(routeHandlers))
-		if c.index-hLen < 1 {
+		if c.index == int8(len(handlers)) {
 			if err := c.route.Serve(c); err != nil {
 				c.abortWithError(err)
 			}
@@ -68,6 +98,10 @@ func (c *Context) Next() {
 
 func (c *Context) Route() Route {
 	return c.route
+}
+
+func (c *Context) Param(name string) string {
+	return c.params.ByName(name)
 }
 
 func (c *Context) IsAborted() bool {

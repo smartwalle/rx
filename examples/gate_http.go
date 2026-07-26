@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/smartwalle/rx"
 	"log"
 	"net/http"
 	"regexp"
+
+	"github.com/smartwalle/rx"
 )
 
 type gateHTTPRouter struct {
@@ -47,7 +48,7 @@ func main() {
 	provider.Add("/ws", []string{"http://127.0.0.1:9930", "http://127.0.0.1:9931"})
 
 	var s = rx.New()
-	s.Load(provider)
+	s.UseRouter(provider)
 
 	s.Use(func(c *rx.Context) {
 		log.Println("middleware 1")

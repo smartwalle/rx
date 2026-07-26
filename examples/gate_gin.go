@@ -2,11 +2,12 @@ package main
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/smartwalle/rx"
 	"log"
 	"net/http"
 	"regexp"
+
+	"github.com/gin-gonic/gin"
+	"github.com/smartwalle/rx"
 )
 
 type gateGinRouter struct {
@@ -66,7 +67,7 @@ func main() {
 	provider.Add("/ws", []string{"http://127.0.0.1:9930", "http://127.0.0.1:9931"})
 
 	var s = rx.New()
-	s.Load(provider)
+	s.UseRouter(provider)
 
 	s.Use(func(c *rx.Context) {
 		//log.Println("middleware 1")

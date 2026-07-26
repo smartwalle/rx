@@ -3,7 +3,6 @@ package rx
 import (
 	"github.com/smartwalle/rx/balancer"
 	"github.com/smartwalle/rx/balancer/roundrobin"
-	"strings"
 )
 
 var balancers = make(map[string]balancer.Builder)
@@ -14,12 +13,12 @@ func init() {
 
 func RegisterBalancer(b balancer.Builder) {
 	if b != nil {
-		balancers[strings.ToLower(b.Name())] = b
+		balancers[b.Name()] = b
 	}
 }
 
 func GetBalancer(name string) balancer.Builder {
-	if b, ok := balancers[strings.ToLower(name)]; ok {
+	if b, ok := balancers[name]; ok {
 		return b
 	}
 	return nil

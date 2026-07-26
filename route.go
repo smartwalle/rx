@@ -1,6 +1,7 @@
 package rx
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -9,6 +10,8 @@ import (
 	"github.com/smartwalle/rx/balancer"
 	"github.com/smartwalle/rx/balancer/roundrobin"
 )
+
+var ErrProxyNotFound = errors.New("proxy not found")
 
 type ProxyBuilder func(target *url.URL) *httputil.ReverseProxy
 
@@ -26,20 +29,13 @@ func WithProxyBuilder(builder ProxyBuilder) Option {
 	}
 }
 
-func WithHandlers(handlers ...HandlerFunc) Option {
-	return func(opts *options) {
-		opts.handlers = handlers
-	}
-}
-
 type options struct {
 	balancer string
 	builder  ProxyBuilder
-	handlers HandlersChain
 }
 
 func defaultProxyErrorHandler(writer http.ResponseWriter, request *http.Request, err error) {
-	if wrapper, ok := writer.(rWriterWrapper); ok {
+	if wrapper, ok := writer.(writerWrapper); ok {
 		wrapper.context.abortWithError(err)
 	}
 }
@@ -49,8 +45,8 @@ func (opts *options) buildBalancer(targets []*url.URL) (balancer.Balancer, error
 		opts.balancer = roundrobin.Name
 	}
 
-	var bBuilder = GetBalancer(opts.balancer)
-	if bBuilder == nil {
+	var builder = GetBalancer(opts.balancer)
+	if builder == nil {
 		return nil, fmt.Errorf("unknown balancer %s", opts.balancer)
 	}
 
@@ -66,7 +62,7 @@ func (opts *options) buildBalancer(targets []*url.URL) (balancer.Balancer, error
 	var info = balancer.BuildInfo{
 		Targets: proxies,
 	}
-	return bBuilder.Build(info)
+	return builder.Build(info)
 }
 
 func (opts *options) buildProxy(target *url.URL) *httputil.ReverseProxy {
@@ -78,20 +74,20 @@ func (opts *options) buildProxy(target *url.URL) *httputil.ReverseProxy {
 
 // Route 表示 Router 已经匹配到的处理目标。
 type Route interface {
-	Pattern() string
+	Path() string
 	Handlers() HandlersChain
 	Serve(c *Context) error
 }
 
-type ProxyRoute struct {
-	pattern  string
+type proxyRoute struct {
+	path     string
 	handlers HandlersChain
 	targets  []*url.URL
 	balancer balancer.Balancer
 }
 
 // NewProxyRoute 创建反向代理路由。
-func NewProxyRoute(pattern string, targets []string, opts ...Option) (*ProxyRoute, error) {
+func NewProxyRoute(path string, targets []string, handlers []HandlerFunc, opts ...Option) (Route, error) {
 	var targetURLs = make([]*url.URL, 0, len(targets))
 	for _, target := range targets {
 		nURL, err := url.Parse(target)
@@ -112,59 +108,59 @@ func NewProxyRoute(pattern string, targets []string, opts ...Option) (*ProxyRout
 		return nil, err
 	}
 
-	var route = &ProxyRoute{}
-	route.pattern = pattern
-	route.handlers = nOpts.handlers
+	var route = &proxyRoute{}
+	route.path = path
+	route.handlers = handlers
 	route.targets = targetURLs
 	route.balancer = balancer
 
 	return route, nil
 }
 
-func (route *ProxyRoute) Pattern() string {
-	return route.pattern
+func (route *proxyRoute) Path() string {
+	return route.path
 }
 
-func (route *ProxyRoute) Handlers() HandlersChain {
+func (route *proxyRoute) Handlers() HandlersChain {
 	return route.handlers
 }
 
-func (route *ProxyRoute) Serve(c *Context) error {
+func (route *proxyRoute) Serve(c *Context) error {
 	if route == nil || route.balancer == nil {
-		return fmt.Errorf("no proxy")
+		return ErrProxyNotFound
 	}
 	result, err := route.balancer.Pick(c.Request)
 	if err != nil {
 		return err
 	}
 	if result.Proxy == nil {
-		return fmt.Errorf("no proxy")
+		return ErrProxyNotFound
 	}
-	result.Proxy.ServeHTTP(rWriterWrapper{ResponseWriter: c.Writer, context: c}, c.Request)
+	result.Proxy.ServeHTTP(writerWrapper{ResponseWriter: c.Writer, context: c}, c.Request)
 	return nil
 }
 
-type LocalRoute struct {
-	pattern  string
+type localRoute struct {
+	path     string
 	handlers HandlersChain
 }
 
-// NewLocalRoute 创建只执行本地处理函数的路由。
-func NewLocalRoute(pattern string, handlers ...HandlerFunc) *LocalRoute {
-	var route = &LocalRoute{}
-	route.pattern = pattern
+// NewRoute 创建只执行本地处理函数的路由。
+func NewRoute(path string, handlers ...HandlerFunc) Route {
+	var route = &localRoute{}
+	route.path = path
 	route.handlers = handlers
 	return route
 }
 
-func (route *LocalRoute) Pattern() string {
-	return route.pattern
+func (route *localRoute) Path() string {
+	return route.path
 }
 
-func (route *LocalRoute) Handlers() HandlersChain {
+func (route *localRoute) Handlers() HandlersChain {
 	return route.handlers
 }
 
-func (route *LocalRoute) Serve(c *Context) error {
+func (route *localRoute) Serve(_ *Context) error {
 	return nil
 }

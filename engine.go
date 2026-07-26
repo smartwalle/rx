@@ -13,9 +13,8 @@ type HandlersChain []HandlerFunc
 type ErrorHandler func(c *Context, err error)
 
 type Engine struct {
-	pool     sync.Pool
-	handlers HandlersChain
-	router   Router
+	pool   sync.Pool
+	router Router
 
 	noRoute Route
 	error   ErrorHandler
@@ -27,17 +26,13 @@ func New() *Engine {
 		return &Context{}
 	}
 	nEngine.router = &nonRouter{}
-	nEngine.noRoute = NewLocalRoute("")
+	nEngine.noRoute = NewRoute("")
 	nEngine.error = defaultErrorHandler
 	return nEngine
 }
 
-func (e *Engine) Use(middleware ...HandlerFunc) {
-	e.handlers = append(e.handlers, middleware...)
-}
-
 func (e *Engine) NoRoute(handlers ...HandlerFunc) {
-	e.noRoute = NewLocalRoute("", handlers...)
+	e.noRoute = NewRoute("", handlers...)
 }
 
 func (e *Engine) HandleError(handler ErrorHandler) {
@@ -47,7 +42,7 @@ func (e *Engine) HandleError(handler ErrorHandler) {
 	e.error = handler
 }
 
-func (e *Engine) Load(router Router) {
+func (e *Engine) UseRouter(router Router) {
 	if router == nil {
 		router = &nonRouter{}
 	}
@@ -56,10 +51,10 @@ func (e *Engine) Load(router Router) {
 
 func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	c := e.pool.Get().(*Context)
-	c.mWriter.reset(writer)
+	c.Context = request.Context()
 	c.Request = request
-	c.reset()
-	c.handlers = e.handlers
+
+	c.reset(writer)
 	c.error = e.error
 
 	e.handleHTTPRequest(c)
@@ -68,38 +63,38 @@ func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (e *Engine) handleHTTPRequest(c *Context) {
-	route, err := e.router.Match(c.Request)
+	route, params, err := e.router.Match(c.Request.Method, c.Request.URL.Path, c.params[:0])
 	if err != nil {
 		e.serveError(c, e.noRoute, http.StatusBadGateway, err.Error())
 		return
 	}
 
 	if route == nil {
-		e.serveError(c, e.noRoute, http.StatusBadGateway, http.StatusText(http.StatusBadGateway))
+		e.serveError(c, e.noRoute, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		return
 	}
 
 	c.route = route
+	c.params = params
 	c.Next()
-	c.mWriter.WriteHeaderNow()
+	c.writer.WriteHeaderNow()
 }
 
 func (e *Engine) serveError(c *Context, route Route, code int, message string) {
-	c.mWriter.status = code
+	c.writer.status = code
 	c.route = route
 	c.index = -1
 	c.Next()
 
-	if c.mWriter.Written() {
+	if c.writer.Written() {
 		return
 	}
 
-	if c.mWriter.Status() == code {
-		//c.mWriter.Header()[kContentType] = kContentTypeText
+	if c.writer.Status() == code {
 		c.Writer.WriteString(message)
 		return
 	}
-	c.mWriter.WriteHeaderNow()
+	c.writer.WriteHeaderNow()
 }
 
 func defaultErrorHandler(c *Context, err error) {
