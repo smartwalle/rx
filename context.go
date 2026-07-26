@@ -51,9 +51,9 @@ type Context struct {
 
 	Request *http.Request
 	Writer  ResponseWriter
+	Params  Params
 
 	writer responseWriter
-	params Params
 
 	index int8
 
@@ -67,10 +67,10 @@ type Context struct {
 func (c *Context) reset(writer http.ResponseWriter) {
 	c.writer.reset(writer)
 	c.Writer = &c.writer
-	if c.params == nil {
-		c.params = make(Params, 0, kParamsCapacity)
+	if c.Params == nil {
+		c.Params = make(Params, 0, kParamsCapacity)
 	}
-	c.params = c.params[:0]
+	c.Params = c.Params[:0]
 	c.index = -1
 	c.route = nil
 	c.error = nil
@@ -101,7 +101,7 @@ func (c *Context) Route() Route {
 }
 
 func (c *Context) Param(name string) string {
-	return c.params.ByName(name)
+	return c.Params.ByName(name)
 }
 
 func (c *Context) IsAborted() bool {
