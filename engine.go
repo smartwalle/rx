@@ -25,7 +25,7 @@ func New() *Engine {
 	nEngine.pool.New = func() interface{} {
 		return &Context{}
 	}
-	nEngine.router = &nonRouter{}
+	nEngine.router = &noop{}
 	nEngine.noRoute = NewRoute("")
 	nEngine.error = defaultErrorHandler
 	return nEngine
@@ -44,7 +44,7 @@ func (e *Engine) HandleError(handler ErrorHandler) {
 
 func (e *Engine) UseRouter(router Router) {
 	if router == nil {
-		router = &nonRouter{}
+		router = &noop{}
 	}
 	e.router = router
 }

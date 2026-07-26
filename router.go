@@ -5,10 +5,10 @@ type Router interface {
 	Match(method string, path string, params Params) (Route, Params, error)
 }
 
-type nonRouter struct {
+type noop struct {
 }
 
-func (p *nonRouter) Match(method string, path string, params Params) (Route, Params, error) {
+func (p *noop) Match(method string, path string, params Params) (Route, Params, error) {
 	panic(`router should be specified. 
 var router = yourRouter{}
 var engine = rx.New()
