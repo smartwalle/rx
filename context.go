@@ -1,7 +1,6 @@
 package rx
 
 import (
-	"context"
 	"math"
 	"net/http"
 	"sync"
@@ -47,8 +46,6 @@ func (ps Params) ByName(name string) string {
 }
 
 type Context struct {
-	context.Context
-
 	Request *http.Request
 	Writer  ResponseWriter
 	Params  Params

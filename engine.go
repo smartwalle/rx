@@ -51,7 +51,6 @@ func (e *Engine) UseRouter(router Router) {
 
 func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	c := e.pool.Get().(*Context)
-	c.Context = request.Context()
 	c.Request = request
 
 	c.reset(writer)
