@@ -72,7 +72,7 @@ func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 func (e *Engine) handleHTTPRequest(c *Context) {
 	route, params, err := e.router.Match(c.Request.Method, c.Request.URL.Path, c.Params[:0])
 	if err != nil {
-		e.serveError(c, e.noRoute, http.StatusBadGateway, err.Error())
+		c.abortWithError(err)
 		return
 	}
 
