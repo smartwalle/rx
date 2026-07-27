@@ -30,15 +30,16 @@ type Router interface {
 
 	Use(handlers ...rx.HandlerFunc)
 	Group(path string, handlers ...rx.HandlerFunc) Router
-	Proxy(method string, path string, targets []string, opts ...rx.Option) error
+	Proxy(method string, path string, targets []string, opts ...rx.Option)
+	ProxyAny(path string, targets []string, opts ...rx.Option)
 
-	GET(path string, handlers ...rx.HandlerFunc) error
-	POST(path string, handlers ...rx.HandlerFunc) error
-	PUT(path string, handlers ...rx.HandlerFunc) error
-	PATCH(path string, handlers ...rx.HandlerFunc) error
-	DELETE(path string, handlers ...rx.HandlerFunc) error
-	HEAD(path string, handlers ...rx.HandlerFunc) error
-	OPTIONS(path string, handlers ...rx.HandlerFunc) error
+	GET(path string, handlers ...rx.HandlerFunc)
+	POST(path string, handlers ...rx.HandlerFunc)
+	PUT(path string, handlers ...rx.HandlerFunc)
+	PATCH(path string, handlers ...rx.HandlerFunc)
+	DELETE(path string, handlers ...rx.HandlerFunc)
+	HEAD(path string, handlers ...rx.HandlerFunc)
+	OPTIONS(path string, handlers ...rx.HandlerFunc)
 }
 
 type router struct {
@@ -49,6 +50,18 @@ type router struct {
 var _ Router = (*router)(nil)
 var _ Router = (*group)(nil)
 
+var anyMethods = []string{
+	http.MethodGet,
+	http.MethodPost,
+	http.MethodPut,
+	http.MethodPatch,
+	http.MethodDelete,
+	http.MethodHead,
+	http.MethodOptions,
+	http.MethodConnect,
+	http.MethodTrace,
+}
+
 // New 创建一个支持分组和 method 分发的 Router。
 func New() Router {
 	r := &router{}
@@ -58,22 +71,13 @@ func New() Router {
 	return r
 }
 
-func (r *router) add(method string, route rx.Route) error {
-	if r == nil {
-		return nil
-	}
-	if method == "" {
-		return fmt.Errorf("method must not be empty")
-	}
+func (r *router) add(method string, route rx.Route) {
 	var t = r.getOrCreate(method)
-	return t.add(route)
+	t.add(route)
 }
 
 // Match 根据 method 和 path 匹配 Route。
 func (r *router) Match(method string, path string, params rx.Params) (rx.Route, rx.Params, error) {
-	if r == nil {
-		return nil, params, nil
-	}
 	var t = r.trees.get(method)
 	if t == nil {
 		return nil, params, nil
@@ -101,7 +105,7 @@ type group struct {
 
 // Use 向当前分组追加中间件。
 func (g *group) Use(handlers ...rx.HandlerFunc) {
-	if g == nil || len(handlers) == 0 {
+	if len(handlers) == 0 {
 		return
 	}
 	g.handlers = combineHandlers(g.handlers, handlers)
@@ -109,9 +113,6 @@ func (g *group) Use(handlers ...rx.HandlerFunc) {
 
 // Group 创建子分组。
 func (g *group) Group(path string, handlers ...rx.HandlerFunc) Router {
-	if g == nil {
-		return nil
-	}
 	return &group{
 		router:   g.router,
 		base:     joinPath(g.base, path),
@@ -120,62 +121,60 @@ func (g *group) Group(path string, handlers ...rx.HandlerFunc) Router {
 }
 
 func (g *group) Match(method string, path string, params rx.Params) (rx.Route, rx.Params, error) {
-	if g == nil || g.router == nil {
-		return nil, params, nil
-	}
 	return g.router.Match(method, path, params)
 }
 
-func (g *group) handle(method string, path string, handlers ...rx.HandlerFunc) error {
-	if g == nil || g.router == nil {
-		return nil
-	}
+func (g *group) handle(method string, path string, handlers ...rx.HandlerFunc) {
 	fullPath := joinPath(g.base, path)
-	return g.router.add(method, rx.NewRoute(fullPath, combineHandlers(g.handlers, handlers)...))
+	g.router.add(method, rx.NewRoute(fullPath, combineHandlers(g.handlers, handlers)...))
 }
 
 // Proxy 注册指定 method 的反向代理路由。
-func (g *group) Proxy(method string, path string, targets []string, opts ...rx.Option) error {
-	if g == nil || g.router == nil {
-		return nil
-	}
+func (g *group) Proxy(method string, path string, targets []string, opts ...rx.Option) {
 	if !validMethod(method) {
-		return fmt.Errorf("invalid method %q", method)
+		panic(fmt.Errorf("invalid method %q", method))
 	}
 	fullPath := joinPath(g.base, path)
 	route, err := rx.NewProxyRoute(fullPath, targets, g.handlers, opts...)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return g.router.add(method, route)
+	g.router.add(method, route)
 }
 
-func (g *group) GET(path string, handlers ...rx.HandlerFunc) error {
-	return g.handle(http.MethodGet, path, handlers...)
+// ProxyAny 注册所有标准 method 的反向代理路由。
+func (g *group) ProxyAny(path string, targets []string, opts ...rx.Option) {
+	for _, method := range anyMethods {
+		g.Proxy(method, path, targets, opts...)
+	}
 }
 
-func (g *group) POST(path string, handlers ...rx.HandlerFunc) error {
-	return g.handle(http.MethodPost, path, handlers...)
+func (g *group) GET(path string, handlers ...rx.HandlerFunc) {
+	g.handle(http.MethodGet, path, handlers...)
 }
 
-func (g *group) PUT(path string, handlers ...rx.HandlerFunc) error {
-	return g.handle(http.MethodPut, path, handlers...)
+func (g *group) POST(path string, handlers ...rx.HandlerFunc) {
+	g.handle(http.MethodPost, path, handlers...)
 }
 
-func (g *group) PATCH(path string, handlers ...rx.HandlerFunc) error {
-	return g.handle(http.MethodPatch, path, handlers...)
+func (g *group) PUT(path string, handlers ...rx.HandlerFunc) {
+	g.handle(http.MethodPut, path, handlers...)
 }
 
-func (g *group) DELETE(path string, handlers ...rx.HandlerFunc) error {
-	return g.handle(http.MethodDelete, path, handlers...)
+func (g *group) PATCH(path string, handlers ...rx.HandlerFunc) {
+	g.handle(http.MethodPatch, path, handlers...)
 }
 
-func (g *group) HEAD(path string, handlers ...rx.HandlerFunc) error {
-	return g.handle(http.MethodHead, path, handlers...)
+func (g *group) DELETE(path string, handlers ...rx.HandlerFunc) {
+	g.handle(http.MethodDelete, path, handlers...)
 }
 
-func (g *group) OPTIONS(path string, handlers ...rx.HandlerFunc) error {
-	return g.handle(http.MethodOptions, path, handlers...)
+func (g *group) HEAD(path string, handlers ...rx.HandlerFunc) {
+	g.handle(http.MethodHead, path, handlers...)
+}
+
+func (g *group) OPTIONS(path string, handlers ...rx.HandlerFunc) {
+	g.handle(http.MethodOptions, path, handlers...)
 }
 
 func combineHandlers(base rx.HandlersChain, handlers []rx.HandlerFunc) rx.HandlersChain {

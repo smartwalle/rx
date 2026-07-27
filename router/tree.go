@@ -58,27 +58,24 @@ func newTree() *tree {
 	}
 }
 
-// add 注册 Route。
+// add 注册或替换 Route。
 //
-// Route.Path 必须以 / 开头，通配符也必须符合路径规则语义。非法规则或与已有通配规则冲突时，
-// add 会返回错误。
-func (t *tree) add(route rx.Route) error {
-	if t == nil {
-		return nil
-	}
-	if route == nil {
-		return nil
+// Route.Path 必须以 / 开头，通配符也必须符合路径规则语义。非法规则或与已有通配规则冲突时会 panic。
+// 如果同一路径已经存在，add 会直接替换原 Route。
+func (t *tree) add(route rx.Route) {
+	if t == nil || route == nil {
+		return
 	}
 	path := route.Path()
 	if !validPath(path) {
-		return fmt.Errorf("path must begin with '/'")
+		panic(fmt.Errorf("path must begin with '/'"))
 	}
 	t.ensure()
-	if mNode, _, ok := matchNode(t.root, path, nil, false); ok && mNode.fullPath == path {
-		return fmt.Errorf("route already exists for path %q", path)
-	}
 
-	return t.root.addRoute(path, route)
+	var err = t.root.addRoute(path, route)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (t *tree) match(path string, params rx.Params) (rx.Route, rx.Params, error) {
@@ -164,6 +161,10 @@ walk:
 			} else if current.wildChild {
 				current = current.children[len(current.children)-1]
 				current.priority++
+				if current.nType == nodeCatchAll && current.fullPath == fullPath && current.path == path {
+					current.route = route
+					return nil
+				}
 				if len(path) >= len(current.path) && current.path == path[:len(current.path)] &&
 					current.nType != nodeCatchAll &&
 					(len(current.path) >= len(path) || path[len(current.path)] == '/') {
@@ -175,9 +176,6 @@ walk:
 			return current.insertChild(path, fullPath, route)
 		}
 
-		if current.route != nil {
-			return fmt.Errorf("route already exists for path %q", fullPath)
-		}
 		current.fullPath = fullPath
 		current.route = route
 		return nil
@@ -224,9 +222,6 @@ func (n *node) insertChild(path string, fullPath string, route rx.Route) error {
 				continue
 			}
 
-			if current.route != nil {
-				return fmt.Errorf("route already exists for path %q", fullPath)
-			}
 			current.fullPath = fullPath
 			current.route = route
 			return nil
