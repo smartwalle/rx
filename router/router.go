@@ -108,7 +108,7 @@ func (g *group) Use(middleware ...rx.HandlerFunc) {
 	if len(middleware) == 0 {
 		return
 	}
-	g.handlers = combineHandlers(g.handlers, middleware)
+	g.handlers = rx.CombineHandlers(g.handlers, middleware...)
 }
 
 // Group 创建子分组。
@@ -116,7 +116,7 @@ func (g *group) Group(path string, handlers ...rx.HandlerFunc) Router {
 	return &group{
 		router:   g.router,
 		base:     joinPath(g.base, path),
-		handlers: combineHandlers(g.handlers, handlers),
+		handlers: rx.CombineHandlers(g.handlers, handlers...),
 	}
 }
 
@@ -126,7 +126,7 @@ func (g *group) Match(method string, path string, params rx.Params) (rx.Route, r
 
 func (g *group) handle(method string, path string, handlers ...rx.HandlerFunc) {
 	fullPath := joinPath(g.base, path)
-	g.router.add(method, rx.NewRoute(fullPath, combineHandlers(g.handlers, handlers)...))
+	g.router.add(method, rx.NewRoute(fullPath, rx.CombineHandlers(g.handlers, handlers...)...))
 }
 
 // Proxy 注册指定 method 的反向代理路由。
@@ -175,16 +175,6 @@ func (g *group) HEAD(path string, handlers ...rx.HandlerFunc) {
 
 func (g *group) OPTIONS(path string, handlers ...rx.HandlerFunc) {
 	g.handle(http.MethodOptions, path, handlers...)
-}
-
-func combineHandlers(base rx.HandlersChain, handlers []rx.HandlerFunc) rx.HandlersChain {
-	if len(base) == 0 && len(handlers) == 0 {
-		return nil
-	}
-	combined := make(rx.HandlersChain, 0, len(base)+len(handlers))
-	combined = append(combined, base...)
-	combined = append(combined, handlers...)
-	return combined
 }
 
 func validMethod(method string) bool {

@@ -36,7 +36,7 @@ type options struct {
 
 func defaultProxyErrorHandler(writer http.ResponseWriter, request *http.Request, err error) {
 	if wrapper, ok := writer.(writerWrapper); ok {
-		wrapper.context.abortWithError(err)
+		wrapper.context.AbortWithError(err)
 	}
 }
 
@@ -76,13 +76,11 @@ func (opts *options) buildProxy(target *url.URL) *httputil.ReverseProxy {
 type Route interface {
 	Path() string
 	Handlers() HandlersChain
-	Serve(c *Context) error
 }
 
 type proxyRoute struct {
 	path     string
 	handlers HandlersChain
-	targets  []*url.URL
 	balancer balancer.Balancer
 }
 
@@ -110,9 +108,8 @@ func NewProxyRoute(path string, targets []string, handlers []HandlerFunc, opts .
 
 	var route = &proxyRoute{}
 	route.path = path
-	route.handlers = handlers
-	route.targets = targetURLs
 	route.balancer = balancer
+	route.handlers = CombineHandlers(handlers, route.proxy)
 
 	return route, nil
 }
@@ -125,19 +122,21 @@ func (route *proxyRoute) Handlers() HandlersChain {
 	return route.handlers
 }
 
-func (route *proxyRoute) Serve(c *Context) error {
+func (route *proxyRoute) proxy(c *Context) {
 	if route == nil || route.balancer == nil {
-		return ErrProxyNotFound
+		c.AbortWithError(ErrProxyNotFound)
+		return
 	}
 	result, err := route.balancer.Pick(c.Request)
 	if err != nil {
-		return err
+		c.AbortWithError(err)
+		return
 	}
 	if result.Proxy == nil {
-		return ErrProxyNotFound
+		c.AbortWithError(ErrProxyNotFound)
+		return
 	}
 	result.Proxy.ServeHTTP(writerWrapper{ResponseWriter: c.Writer, context: c}, c.Request)
-	return nil
 }
 
 type localRoute struct {
@@ -161,6 +160,12 @@ func (route *localRoute) Handlers() HandlersChain {
 	return route.handlers
 }
 
-func (route *localRoute) Serve(_ *Context) error {
-	return nil
+func CombineHandlers(base HandlersChain, handlers ...HandlerFunc) HandlersChain {
+	if len(base) == 0 && len(handlers) == 0 {
+		return nil
+	}
+	combined := make(HandlersChain, 0, len(base)+len(handlers))
+	combined = append(combined, base...)
+	combined = append(combined, handlers...)
+	return combined
 }

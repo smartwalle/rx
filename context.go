@@ -91,13 +91,6 @@ func (c *Context) Next() {
 			routeHandlers[c.index-int8(len(handlers))](c)
 			c.index++
 		}
-
-		if c.index == int8(len(handlers)+len(routeHandlers)) {
-			if err := c.route.Serve(c); err != nil {
-				c.abortWithError(err)
-			}
-			c.index++
-		}
 	}
 }
 
@@ -117,7 +110,7 @@ func (c *Context) Abort() {
 	c.index = kAbortIndex
 }
 
-func (c *Context) abortWithError(err error) {
+func (c *Context) AbortWithError(err error) {
 	c.Abort()
 	c.Status(http.StatusInternalServerError)
 	c.error(c, err)
@@ -125,9 +118,9 @@ func (c *Context) abortWithError(err error) {
 }
 
 func (c *Context) AbortWithStatus(code int) {
+	c.Abort()
 	c.Status(code)
 	c.Writer.WriteHeaderNow()
-	c.Abort()
 }
 
 func (c *Context) AbortWithJSON(code int, obj interface{}) {
@@ -161,7 +154,7 @@ func (c *Context) Render(code int, r Render) {
 	}
 
 	if err := r.Render(c.Writer); err != nil {
-		c.Abort()
+		c.AbortWithError(err)
 	}
 }
 

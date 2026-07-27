@@ -1,6 +1,7 @@
 package rx
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 )
@@ -72,7 +73,7 @@ func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 func (e *Engine) handleHTTPRequest(c *Context) {
 	route, params, err := e.router.Match(c.Request.Method, c.Request.URL.Path, c.Params[:0])
 	if err != nil {
-		c.abortWithError(err)
+		c.AbortWithError(err)
 		return
 	}
 
@@ -106,4 +107,5 @@ func (e *Engine) serveError(c *Context, route Route, code int, message string) {
 
 func defaultErrorHandler(c *Context, err error) {
 	c.AbortWithStatus(http.StatusInternalServerError)
+	fmt.Fprintln(c.Writer, err.Error())
 }
