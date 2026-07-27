@@ -1,7 +1,6 @@
 package rx
 
 import (
-	"log"
 	"net/http"
 	"sync"
 )
@@ -13,22 +12,30 @@ type HandlersChain []HandlerFunc
 type ErrorHandler func(c *Context, err error)
 
 type Engine struct {
-	pool   sync.Pool
-	router Router
+	pool     sync.Pool
+	handlers HandlersChain
+	router   Router
 
 	noRoute Route
 	error   ErrorHandler
 }
 
 func New() *Engine {
-	var nEngine = &Engine{}
-	nEngine.pool.New = func() interface{} {
+	var engine = &Engine{}
+	engine.pool.New = func() interface{} {
 		return &Context{}
 	}
-	nEngine.router = &noop{}
-	nEngine.noRoute = NewRoute("")
-	nEngine.error = defaultErrorHandler
-	return nEngine
+	engine.router = &noop{}
+	engine.noRoute = NewRoute("")
+	engine.error = defaultErrorHandler
+	return engine
+}
+
+func (e *Engine) Use(middleware ...HandlerFunc) {
+	if len(middleware) == 0 {
+		return
+	}
+	e.handlers = append(e.handlers, middleware...)
 }
 
 func (e *Engine) NoRoute(handlers ...HandlerFunc) {
@@ -55,6 +62,7 @@ func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	c.reset(writer)
 	c.error = e.error
+	c.handlers = e.handlers
 
 	e.handleHTTPRequest(c)
 
@@ -97,6 +105,5 @@ func (e *Engine) serveError(c *Context, route Route, code int, message string) {
 }
 
 func defaultErrorHandler(c *Context, err error) {
-	log.Printf("proxy error: %v", err)
 	c.AbortWithStatus(http.StatusInternalServerError)
 }

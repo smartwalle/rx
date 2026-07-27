@@ -28,7 +28,7 @@ func (trees methodTrees) get(method string) *tree {
 type Router interface {
 	rx.Router
 
-	Use(handlers ...rx.HandlerFunc)
+	Use(middleware ...rx.HandlerFunc)
 	Group(path string, handlers ...rx.HandlerFunc) Router
 	Proxy(method string, path string, targets []string, opts ...rx.Option)
 	ProxyAny(path string, targets []string, opts ...rx.Option)
@@ -104,11 +104,11 @@ type group struct {
 }
 
 // Use 向当前分组追加中间件。
-func (g *group) Use(handlers ...rx.HandlerFunc) {
-	if len(handlers) == 0 {
+func (g *group) Use(middleware ...rx.HandlerFunc) {
+	if len(middleware) == 0 {
 		return
 	}
-	g.handlers = combineHandlers(g.handlers, handlers)
+	g.handlers = combineHandlers(g.handlers, middleware)
 }
 
 // Group 创建子分组。

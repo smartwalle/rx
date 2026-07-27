@@ -54,8 +54,9 @@ type Context struct {
 
 	index int8
 
-	route Route
-	error ErrorHandler
+	handlers HandlersChain
+	route    Route
+	error    ErrorHandler
 
 	mu   sync.RWMutex
 	Keys map[string]interface{}
@@ -69,6 +70,7 @@ func (c *Context) reset(writer http.ResponseWriter) {
 	}
 	c.Params = c.Params[:0]
 	c.index = -1
+	c.handlers = nil
 	c.route = nil
 	c.error = nil
 	c.Keys = nil
@@ -78,13 +80,19 @@ func (c *Context) Next() {
 	if c.route != nil {
 		c.index++
 
-		handlers := c.route.Handlers()
+		handlers := c.handlers
 		for c.index < int8(len(handlers)) {
 			handlers[c.index](c)
 			c.index++
 		}
 
-		if c.index == int8(len(handlers)) {
+		routeHandlers := c.route.Handlers()
+		for c.index-int8(len(handlers)) < int8(len(routeHandlers)) {
+			routeHandlers[c.index-int8(len(handlers))](c)
+			c.index++
+		}
+
+		if c.index == int8(len(handlers)+len(routeHandlers)) {
 			if err := c.route.Serve(c); err != nil {
 				c.abortWithError(err)
 			}
