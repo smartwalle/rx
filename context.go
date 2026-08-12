@@ -1,6 +1,7 @@
 package rx
 
 import (
+	"context"
 	"math"
 	"net/http"
 	"sync"
@@ -60,6 +61,10 @@ type Context struct {
 
 	mu   sync.RWMutex
 	Keys map[string]interface{}
+}
+
+func (c *Context) Context() context.Context {
+	return c.Request.Context()
 }
 
 func (c *Context) reset(writer http.ResponseWriter) {
