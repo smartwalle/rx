@@ -13,9 +13,6 @@ func Logger() HandlerFunc {
 
 		c.Next()
 
-		var now = time.Now()
-		var statusCode = c.Writer.Status()
-
-		log.Printf("| %3d | %13v | %s - %s \n", statusCode, now.Sub(begin), method, path)
+		log.Printf("| %3d | %13v | %s - %s \n", c.Writer.Status(), time.Since(begin), method, path)
 	}
 }
