@@ -60,7 +60,7 @@ type Context struct {
 	error    ErrorHandler
 
 	mu   sync.RWMutex
-	Keys map[string]interface{}
+	Keys map[string]any
 }
 
 func (c *Context) Context() context.Context {
@@ -128,12 +128,12 @@ func (c *Context) AbortWithStatus(code int) {
 	c.Writer.WriteHeaderNow()
 }
 
-func (c *Context) AbortWithJSON(code int, obj interface{}) {
+func (c *Context) AbortWithJSON(code int, obj any) {
 	c.Abort()
 	c.JSON(code, obj)
 }
 
-func (c *Context) JSON(code int, obj interface{}) {
+func (c *Context) JSON(code int, obj any) {
 	c.Render(code, jsonRender{data: obj})
 }
 
@@ -167,7 +167,7 @@ func (c *Context) Status(code int) {
 	c.Writer.WriteHeader(code)
 }
 
-func (c *Context) Set(key string, value interface{}) {
+func (c *Context) Set(key string, value any) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.Keys == nil {
@@ -176,7 +176,7 @@ func (c *Context) Set(key string, value interface{}) {
 	c.Keys[key] = value
 }
 
-func (c *Context) Get(key string) (value interface{}, exists bool) {
+func (c *Context) Get(key string) (value any, exists bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	value, exists = c.Keys[key]

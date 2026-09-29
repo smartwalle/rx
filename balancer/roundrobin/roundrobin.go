@@ -2,9 +2,10 @@ package roundrobin
 
 import (
 	"errors"
-	"github.com/smartwalle/rx/balancer"
 	"net/http"
 	"sync/atomic"
+
+	"github.com/smartwalle/rx/balancer"
 )
 
 const (

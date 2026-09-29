@@ -8,7 +8,7 @@ import (
 var kContentTypeJSON = []string{"application/json; charset=utf-8"}
 
 type jsonRender struct {
-	data interface{}
+	data any
 }
 
 func (r jsonRender) ContentType() []string {

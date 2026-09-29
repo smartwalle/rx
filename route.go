@@ -101,14 +101,14 @@ func NewProxyRoute(path string, targets []string, handlers []HandlerFunc, opts .
 			opt(nOpts)
 		}
 	}
-	balancer, err := nOpts.buildBalancer(targetURLs)
+	nBalancer, err := nOpts.buildBalancer(targetURLs)
 	if err != nil {
 		return nil, err
 	}
 
 	var route = &proxyRoute{}
 	route.path = path
-	route.balancer = balancer
+	route.balancer = nBalancer
 	route.handlers = CombineHandlers(handlers, route.proxy)
 
 	return route, nil

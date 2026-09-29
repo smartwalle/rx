@@ -23,7 +23,7 @@ type Engine struct {
 
 func New() *Engine {
 	var engine = &Engine{}
-	engine.pool.New = func() interface{} {
+	engine.pool.New = func() any {
 		return &Context{}
 	}
 	engine.router = &noop{}
