@@ -78,7 +78,7 @@ func (c *Context) reset(writer http.ResponseWriter) {
 	c.handlers = nil
 	c.route = nil
 	c.error = nil
-	c.Keys = nil
+	clear(c.Keys)
 }
 
 func (c *Context) Next() {

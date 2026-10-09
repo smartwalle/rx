@@ -1,7 +1,7 @@
 package rx
 
 import (
-	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -16,6 +16,6 @@ func (r textRender) ContentType() []string {
 }
 
 func (r textRender) Render(w http.ResponseWriter) error {
-	_, err := fmt.Fprintf(w, r.text)
+	_, err := io.WriteString(w, r.text)
 	return err
 }
