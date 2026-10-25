@@ -63,6 +63,14 @@ type Context struct {
 	Keys map[string]any
 }
 
+// UseContext 使用指定的上下文处理当前请求。
+// 后续中间件和处理函数将使用新的上下文。
+func (c *Context) UseContext(ctx context.Context) {
+	if ctx != nil {
+		c.Request = c.Request.WithContext(ctx)
+	}
+}
+
 func (c *Context) Context() context.Context {
 	return c.Request.Context()
 }

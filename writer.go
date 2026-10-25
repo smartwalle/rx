@@ -21,7 +21,6 @@ type ResponseWriter interface {
 	http.ResponseWriter
 	http.Hijacker
 	http.Flusher
-	http.CloseNotifier
 
 	// Status returns the HTTP response status code of the current request.
 	Status() int
@@ -48,8 +47,6 @@ type responseWriter struct {
 	size   int
 	status int
 }
-
-var _ ResponseWriter = (*responseWriter)(nil)
 
 func (w *responseWriter) Unwrap() http.ResponseWriter {
 	return w.ResponseWriter
@@ -113,11 +110,6 @@ func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return nil, nil, http.ErrNotSupported
 	}
 	return hijacker.Hijack()
-}
-
-// CloseNotify implements the http.CloseNotifier interface.
-func (w *responseWriter) CloseNotify() <-chan bool {
-	return w.ResponseWriter.(http.CloseNotifier).CloseNotify()
 }
 
 // Flush implements the http.Flusher interface.
