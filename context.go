@@ -115,7 +115,7 @@ func (c *Context) Param(name string) string {
 	return c.Params.ByName(name)
 }
 
-func (c *Context) IsAborted() bool {
+func (c *Context) Aborted() bool {
 	return c.index >= kAbortIndex
 }
 
