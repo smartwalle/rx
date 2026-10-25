@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -30,8 +29,6 @@ type Router interface {
 
 	Use(middleware ...rx.HandlerFunc)
 	Group(path string, handlers ...rx.HandlerFunc) Router
-	Proxy(method string, path string, targets []string, opts ...rx.Option)
-	ProxyAny(path string, targets []string, opts ...rx.Option)
 
 	GET(path string, handlers ...rx.HandlerFunc)
 	POST(path string, handlers ...rx.HandlerFunc)
@@ -49,18 +46,6 @@ type router struct {
 
 var _ Router = (*router)(nil)
 var _ Router = (*group)(nil)
-
-var anyMethods = []string{
-	http.MethodGet,
-	http.MethodPost,
-	http.MethodPut,
-	http.MethodPatch,
-	http.MethodDelete,
-	http.MethodHead,
-	http.MethodOptions,
-	http.MethodConnect,
-	http.MethodTrace,
-}
 
 // New 创建一个支持分组和 method 分发的 Router。
 func New() Router {
@@ -125,28 +110,7 @@ func (g *group) Match(method string, path string, params rx.Params) (rx.Route, r
 }
 
 func (g *group) handle(method string, path string, handlers ...rx.HandlerFunc) {
-	fullPath := joinPath(g.base, path)
-	g.router.add(method, rx.NewRoute(fullPath, rx.CombineHandlers(g.handlers, handlers...)...))
-}
-
-// Proxy 注册指定 method 的反向代理路由。
-func (g *group) Proxy(method string, path string, targets []string, opts ...rx.Option) {
-	if !validMethod(method) {
-		panic(fmt.Errorf("invalid method %q", method))
-	}
-	fullPath := joinPath(g.base, path)
-	route, err := rx.NewProxyRoute(fullPath, targets, g.handlers, opts...)
-	if err != nil {
-		panic(err)
-	}
-	g.router.add(method, route)
-}
-
-// ProxyAny 注册所有标准 method 的反向代理路由。
-func (g *group) ProxyAny(path string, targets []string, opts ...rx.Option) {
-	for _, method := range anyMethods {
-		g.Proxy(method, path, targets, opts...)
-	}
+	g.router.add(method, rx.NewRoute(joinPath(g.base, path), rx.CombineHandlers(g.handlers, handlers...)...))
 }
 
 func (g *group) GET(path string, handlers ...rx.HandlerFunc) {
@@ -175,23 +139,6 @@ func (g *group) HEAD(path string, handlers ...rx.HandlerFunc) {
 
 func (g *group) OPTIONS(path string, handlers ...rx.HandlerFunc) {
 	g.handle(http.MethodOptions, path, handlers...)
-}
-
-func validMethod(method string) bool {
-	switch method {
-	case http.MethodGet,
-		http.MethodPost,
-		http.MethodPut,
-		http.MethodPatch,
-		http.MethodDelete,
-		http.MethodHead,
-		http.MethodOptions,
-		http.MethodConnect,
-		http.MethodTrace:
-		return true
-	default:
-		return false
-	}
 }
 
 func joinPath(base string, path string) string {
