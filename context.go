@@ -8,9 +8,8 @@ import (
 )
 
 const (
-	kContentType         = "Content-Type"
-	kAbortIndex     int8 = math.MaxInt8 >> 1
-	kParamsCapacity      = 4
+	kContentType      = "Content-Type"
+	kAbortIndex  int8 = math.MaxInt8 >> 1
 )
 
 // Param 是一次路径匹配得到的单个参数。
@@ -74,7 +73,7 @@ func (c *Context) reset(writer http.ResponseWriter) {
 	c.writer.reset(writer)
 	c.Writer = &c.writer
 	if c.Params == nil {
-		c.Params = make(Params, 0, kParamsCapacity)
+		c.Params = make(Params, 0, 8)
 	}
 	c.Params = c.Params[:0]
 	c.index = -1
