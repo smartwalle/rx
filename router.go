@@ -8,7 +8,7 @@ type Router interface {
 type noop struct {
 }
 
-func (p *noop) Match(method string, path string, params Params) (Route, Params, error) {
+func (p *noop) Match(_ string, _ string, _ Params) (Route, Params, error) {
 	panic(`router should be specified. 
 var router = yourRouter{}
 var engine = rx.New()
