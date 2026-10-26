@@ -10,15 +10,15 @@ type HandlerFunc func(c *Context)
 
 type HandlersChain []HandlerFunc
 
-type ErrorHandler func(c *Context, err error)
+type ErrorEncoder func(c *Context, err error)
 
 type Engine struct {
 	pool     sync.Pool
 	handlers HandlersChain
 	router   Router
 
-	noRoute Route
-	error   ErrorHandler
+	noRoute      Route
+	errorEncoder ErrorEncoder
 }
 
 func New() *Engine {
@@ -28,7 +28,7 @@ func New() *Engine {
 	}
 	engine.router = &noop{}
 	engine.noRoute = NewRoute("")
-	engine.error = defaultErrorHandler
+	engine.errorEncoder = defaultErrorEncoder
 	return engine
 }
 
@@ -43,11 +43,11 @@ func (e *Engine) NoRoute(handlers ...HandlerFunc) {
 	e.noRoute = NewRoute("", handlers...)
 }
 
-func (e *Engine) HandleError(handler ErrorHandler) {
-	if handler == nil {
-		handler = defaultErrorHandler
+func (e *Engine) UseErrorEncoder(encoder ErrorEncoder) {
+	if encoder == nil {
+		encoder = defaultErrorEncoder
 	}
-	e.error = handler
+	e.errorEncoder = encoder
 }
 
 func (e *Engine) UseRouter(router Router) {
@@ -62,7 +62,7 @@ func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	c.Request = request
 
 	c.reset(writer)
-	c.error = e.error
+	c.errorEncoder = e.errorEncoder
 	c.handlers = e.handlers
 
 	e.handleHTTPRequest(c)
@@ -105,7 +105,7 @@ func (e *Engine) serveError(c *Context, route Route, code int, message string) {
 	c.writer.WriteHeaderNow()
 }
 
-func defaultErrorHandler(c *Context, err error) {
+func defaultErrorEncoder(c *Context, err error) {
 	c.AbortWithStatus(http.StatusInternalServerError)
 	fmt.Fprintln(c.Writer, err.Error())
 }

@@ -20,6 +20,8 @@ func main() {
 	var s = rx.New()
 	s.Use(rx.Logger())
 	s.UseRouter(r)
+	s.UseErrorEncoder(func(c *rx.Context, err error) {
+	})
 	s.NoRoute(func(c *rx.Context) {
 		c.JSON(http.StatusOK, "sorry")
 	})
