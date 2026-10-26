@@ -13,11 +13,6 @@ const (
 	kParamsCapacity      = 4
 )
 
-type writerWrapper struct {
-	ResponseWriter
-	context *Context
-}
-
 // Param 是一次路径匹配得到的单个参数。
 type Param struct {
 	// Key 是规则中声明的参数名，不包含前缀的 : 或 *。
