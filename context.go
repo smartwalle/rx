@@ -154,7 +154,7 @@ func (c *Context) Render(code int, r Render) {
 		return
 	}
 
-	c.Writer.WriteHeader(code)
+	c.Status(code)
 
 	var header = c.Writer.Header()
 	if val := header[kContentType]; len(val) == 0 {
