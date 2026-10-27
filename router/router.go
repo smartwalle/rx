@@ -1,6 +1,7 @@
 package router
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -110,7 +111,10 @@ func (g *group) Match(method string, path string, params rx.Params) (rx.Route, r
 }
 
 func (g *group) handle(method string, path string, handlers ...rx.HandlerFunc) {
-	g.router.add(method, rx.NewRoute(joinPath(g.base, path), rx.CombineHandlers(g.handlers, handlers...)...))
+	var fullPath = joinPath(g.base, path)
+	g.router.add(method, rx.NewRoute(fullPath, rx.CombineHandlers(g.handlers, handlers...)...))
+
+	log.Printf("[RX] %-7s %s\n", method, fullPath)
 }
 
 func (g *group) GET(path string, handlers ...rx.HandlerFunc) {
