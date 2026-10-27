@@ -1,7 +1,6 @@
 package rx
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 )
@@ -39,7 +38,7 @@ func (e *Engine) Use(middleware ...HandlerFunc) {
 	e.handlers = append(e.handlers, middleware...)
 }
 
-func (e *Engine) NoRoute(handlers ...HandlerFunc) {
+func (e *Engine) UseNoRouteHandler(handlers ...HandlerFunc) {
 	e.noRoute = NewRoute("", handlers...)
 }
 
@@ -107,5 +106,5 @@ func (e *Engine) serveError(c *Context, route Route, code int, message string) {
 
 func defaultErrorEncoder(c *Context, err error) {
 	c.AbortWithStatus(http.StatusInternalServerError)
-	fmt.Fprintln(c.Writer, err.Error())
+	c.Writer.WriteString(err.Error())
 }

@@ -21,9 +21,10 @@ func main() {
 	s.Use(rx.Logger())
 	s.UseRouter(r)
 	s.UseErrorEncoder(func(c *rx.Context, err error) {
+		c.String(http.StatusBadRequest, err.Error())
 	})
-	s.NoRoute(func(c *rx.Context) {
-		c.JSON(http.StatusOK, "sorry")
+	s.UseNoRouteHandler(func(c *rx.Context) {
+		c.String(http.StatusNotFound, "访问路由不存在")
 	})
 
 	http.ListenAndServe(":9900", s)
