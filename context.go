@@ -2,14 +2,12 @@ package rx
 
 import (
 	"context"
-	"math"
 	"net/http"
 	"sync"
 )
 
 const (
-	kContentType      = "Content-Type"
-	kAbortIndex  int8 = math.MaxInt8 >> 1
+	kContentType = "Content-Type"
 )
 
 // Param 是一次路径匹配得到的单个参数。
@@ -47,7 +45,8 @@ type Context struct {
 
 	writer responseWriter
 
-	index int8
+	index   int
+	aborted bool
 
 	handlers     HandlersChain
 	route        Route
@@ -79,6 +78,7 @@ func (c *Context) reset(writer http.ResponseWriter) {
 	}
 	c.Params = c.Params[:0]
 	c.index = -1
+	c.aborted = false
 	c.handlers = nil
 	c.route = nil
 	c.errorEncoder = nil
@@ -86,20 +86,22 @@ func (c *Context) reset(writer http.ResponseWriter) {
 }
 
 func (c *Context) Next() {
-	if c.route != nil {
+	if c.route == nil || c.aborted {
+		return
+	}
+
+	c.index++
+
+	var globalHandlers = c.handlers
+	for c.index < len(globalHandlers) && !c.aborted {
+		globalHandlers[c.index](c)
 		c.index++
+	}
 
-		var globalHandlers = c.handlers
-		for c.index < int8(len(globalHandlers)) {
-			globalHandlers[c.index](c)
-			c.index++
-		}
-
-		var routeHandlers = c.route.Handlers()
-		for c.index-int8(len(globalHandlers)) < int8(len(routeHandlers)) {
-			routeHandlers[c.index-int8(len(globalHandlers))](c)
-			c.index++
-		}
+	var routeHandlers = c.route.Handlers()
+	for c.index-len(globalHandlers) < len(routeHandlers) && !c.aborted {
+		routeHandlers[c.index-len(globalHandlers)](c)
+		c.index++
 	}
 }
 
@@ -112,11 +114,11 @@ func (c *Context) Param(name string) string {
 }
 
 func (c *Context) Aborted() bool {
-	return c.index >= kAbortIndex
+	return c.aborted
 }
 
 func (c *Context) Abort() {
-	c.index = kAbortIndex
+	c.aborted = true
 }
 
 func (c *Context) AbortWithError(err error) {
