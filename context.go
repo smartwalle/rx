@@ -48,9 +48,11 @@ type Context struct {
 	index   int
 	aborted bool
 
-	handlers     HandlersChain
-	route        Route
-	errorEncoder ErrorEncoder
+	handlers HandlersChain
+	route    Route
+
+	encodingError bool
+	errorEncoder  ErrorEncoder
 
 	mu   sync.RWMutex
 	Keys map[string]any
@@ -81,6 +83,7 @@ func (c *Context) reset(writer http.ResponseWriter) {
 	c.aborted = false
 	c.handlers = nil
 	c.route = nil
+	c.encodingError = false
 	c.errorEncoder = nil
 	clear(c.Keys)
 }
@@ -123,6 +126,15 @@ func (c *Context) Abort() {
 
 func (c *Context) AbortWithError(err error) {
 	c.Abort()
+
+	if err == nil || c.encodingError {
+		return
+	}
+	c.encodingError = true
+	defer func() {
+		c.encodingError = false
+	}()
+
 	c.Status(http.StatusInternalServerError)
 	c.errorEncoder(c, err)
 	c.Writer.WriteHeaderNow()
@@ -164,10 +176,9 @@ func (c *Context) Render(code int, r Render) {
 		return
 	}
 
-	_ = r.Render(c.Writer)
-	//if err := r.Render(c.Writer); err != nil {
-	//	c.AbortWithError(err)
-	//}
+	if err := r.Render(c.Writer); err != nil {
+		c.AbortWithError(err)
+	}
 }
 
 func (c *Context) Status(code int) {
