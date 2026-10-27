@@ -16,7 +16,7 @@ type Engine struct {
 	handlers HandlersChain
 	router   Router
 
-	noRoute      Route
+	notFound     Route
 	errorEncoder ErrorEncoder
 }
 
@@ -26,11 +26,15 @@ func New() *Engine {
 		return &Context{}
 	}
 	engine.router = &noop{}
-	engine.noRoute = NewRoute("")
+	engine.notFound = NewRoute("")
 	engine.errorEncoder = defaultErrorEncoder
 	return engine
 }
 
+// Use 追加全局中间件。
+//
+// 全局中间件对所有请求生效，按注册顺序依次执行，并且先于路由自身的处理函数。
+// 多次调用会依次累加；需要终止后续处理时调用 Context.Abort。
 func (e *Engine) Use(middleware ...HandlerFunc) {
 	if len(middleware) == 0 {
 		return
@@ -38,10 +42,20 @@ func (e *Engine) Use(middleware ...HandlerFunc) {
 	e.handlers = append(e.handlers, middleware...)
 }
 
-func (e *Engine) UseNoRouteHandler(handlers ...HandlerFunc) {
-	e.noRoute = NewRoute("", handlers...)
+// UseNotFoundHandler 设置路由未匹配时的兜底处理器。
+//
+// 该处理器只在没有任何路由匹配时执行（即返回 404），并且位于全局中间件之后。
+// 若处理器没有输出任何内容，Engine 会输出默认的 404 提示。
+// 多次调用以最后一次为准。
+func (e *Engine) UseNotFoundHandler(handlers ...HandlerFunc) {
+	e.notFound = NewRoute("", handlers...)
 }
 
+// UseErrorEncoder 设置错误编码器。
+//
+// 请求处理过程中发生错误时，ErrorEncoder 负责把错误转换成响应。
+// 传入 nil 时恢复为默认实现，即返回 500 并输出错误信息。
+// 多次调用以最后一次为准。
 func (e *Engine) UseErrorEncoder(encoder ErrorEncoder) {
 	if encoder == nil {
 		encoder = defaultErrorEncoder
@@ -49,6 +63,11 @@ func (e *Engine) UseErrorEncoder(encoder ErrorEncoder) {
 	e.errorEncoder = encoder
 }
 
+// UseRouter 设置路由表。
+//
+// Router 负责把 method 和 path 匹配到具体的处理函数，是 Engine 处理请求的前提。
+// 传入 nil 时使用默认实现，此时所有请求都会返回 400 并提示如何正确指定路由。
+// 多次调用以最后一次为准。
 func (e *Engine) UseRouter(router Router) {
 	if router == nil {
 		router = &noop{}
@@ -77,7 +96,7 @@ func (e *Engine) handleHTTPRequest(c *Context) {
 	}
 
 	if route == nil {
-		e.serveError(c, e.noRoute, http.StatusNotFound, http.StatusText(http.StatusNotFound))
+		e.serveNotFound(c, e.notFound, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		return
 	}
 
@@ -87,7 +106,8 @@ func (e *Engine) handleHTTPRequest(c *Context) {
 	c.writer.WriteHeaderNow()
 }
 
-func (e *Engine) serveError(c *Context, route Route, code int, message string) {
+// serveNotFound 执行兜底处理器；若处理器没有输出任何内容，则输出默认提示。
+func (e *Engine) serveNotFound(c *Context, route Route, code int, message string) {
 	c.writer.status = code
 	c.route = route
 	c.index = -1

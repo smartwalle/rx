@@ -23,7 +23,7 @@ func main() {
 	s.UseErrorEncoder(func(c *rx.Context, err error) {
 		c.String(http.StatusBadRequest, err.Error())
 	})
-	s.UseNoRouteHandler(func(c *rx.Context) {
+	s.UseNotFoundHandler(func(c *rx.Context) {
 		c.String(http.StatusNotFound, "访问路由不存在")
 	})
 

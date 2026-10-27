@@ -57,8 +57,10 @@ type Context struct {
 	Keys map[string]any
 }
 
-// UseContext 使用指定的上下文处理当前请求。
-// 后续中间件和处理函数将使用新的上下文。
+// UseContext 替换当前请求的上下文。
+//
+// 后续的中间件和处理函数通过 Context.Context() 获取到的将是新的上下文，
+// 常用于超时控制、链路追踪等场景。传入 nil 时不做任何修改。
 func (c *Context) UseContext(ctx context.Context) {
 	if ctx != nil {
 		c.Request = c.Request.WithContext(ctx)
@@ -87,15 +89,15 @@ func (c *Context) Next() {
 	if c.route != nil {
 		c.index++
 
-		handlers := c.handlers
-		for c.index < int8(len(handlers)) {
-			handlers[c.index](c)
+		var globalHandlers = c.handlers
+		for c.index < int8(len(globalHandlers)) {
+			globalHandlers[c.index](c)
 			c.index++
 		}
 
-		routeHandlers := c.route.Handlers()
-		for c.index-int8(len(handlers)) < int8(len(routeHandlers)) {
-			routeHandlers[c.index-int8(len(handlers))](c)
+		var routeHandlers = c.route.Handlers()
+		for c.index-int8(len(globalHandlers)) < int8(len(routeHandlers)) {
+			routeHandlers[c.index-int8(len(globalHandlers))](c)
 			c.index++
 		}
 	}
