@@ -16,12 +16,7 @@ func (r jsonRender) ContentType() []string {
 }
 
 func (r jsonRender) Render(w http.ResponseWriter) error {
-	bytes, err := json.Marshal(r.data)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(bytes)
-	return err
+	return json.NewEncoder(w).Encode(r.data)
 }
 
 func (r jsonRender) WriteContentType(w http.ResponseWriter) {
