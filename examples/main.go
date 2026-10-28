@@ -17,6 +17,10 @@ func main() {
 		c.JSON(http.StatusOK, "r2")
 	})
 
+	r.GET("/r3", func(c *rx.Context) {
+		c.Redirect(http.StatusTemporaryRedirect, "https://www.baidu.com")
+	})
+
 	var s = rx.New()
 	s.Use(rx.Logger())
 	s.UseRouter(r)

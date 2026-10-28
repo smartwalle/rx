@@ -2,6 +2,7 @@ package rx
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 )
@@ -159,6 +160,13 @@ func (c *Context) String(code int, s string) {
 	c.Render(code, textRender{text: s})
 }
 
+func (c *Context) Redirect(code int, location string) {
+	if (code < http.StatusMultipleChoices || code > http.StatusPermanentRedirect) && code != http.StatusCreated {
+		panic(fmt.Sprintf("Cannot redirect with status code %d", code))
+	}
+	http.Redirect(c.Writer, c.Request, location, code)
+}
+
 func (c *Context) Render(code int, r Render) {
 	if r == nil {
 		return
@@ -166,12 +174,8 @@ func (c *Context) Render(code int, r Render) {
 
 	c.Status(code)
 
-	var header = c.Writer.Header()
-	if val := header[kContentType]; len(val) == 0 {
-		header[kContentType] = r.ContentType()
-	}
-
 	if !bodyAllowedForStatus(code) {
+		r.WriteContentType(c.Writer)
 		c.Writer.WriteHeaderNow()
 		return
 	}
@@ -203,7 +207,7 @@ func (c *Context) Get(key string) (value any, exists bool) {
 
 func bodyAllowedForStatus(status int) bool {
 	switch {
-	case status >= 100 && status <= 199:
+	case status >= http.StatusContinue && status < http.StatusOK:
 		return false
 	case status == http.StatusNoContent:
 		return false

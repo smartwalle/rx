@@ -23,3 +23,10 @@ func (r jsonRender) Render(w http.ResponseWriter) error {
 	_, err = w.Write(bytes)
 	return err
 }
+
+func (r jsonRender) WriteContentType(w http.ResponseWriter) {
+	var header = w.Header()
+	if val := header[kContentType]; len(val) == 0 {
+		header[kContentType] = r.ContentType()
+	}
+}
