@@ -3,7 +3,7 @@ package router
 import (
 	"log"
 	"net/http"
-	"strings"
+	"path"
 
 	"github.com/smartwalle/rx"
 )
@@ -145,29 +145,18 @@ func (g *group) OPTIONS(path string, handlers ...rx.HandlerFunc) {
 	g.handle(http.MethodOptions, path, handlers...)
 }
 
-func joinPath(base string, path string) string {
-	if path == "" {
-		if base == "" {
-			return "/"
-		}
+func joinPath(base, rPath string) string {
+	if rPath == "" {
 		return base
 	}
-	if base == "" || base == "/" {
-		if strings.HasPrefix(path, "/") {
-			return path
-		}
-		return "/" + path
-	}
 
-	if strings.HasSuffix(base, "/") {
-		if strings.HasPrefix(path, "/") {
-			return base + path[1:]
-		}
-		return base + path
+	var finalPath = path.Join(base, rPath)
+	if lastChar(rPath) == '/' && lastChar(finalPath) != '/' {
+		return finalPath + "/"
 	}
+	return finalPath
+}
 
-	if strings.HasPrefix(path, "/") {
-		return base + path
-	}
-	return base + "/" + path
+func lastChar(str string) uint8 {
+	return str[len(str)-1]
 }
