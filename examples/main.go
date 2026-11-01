@@ -1,10 +1,12 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/smartwalle/rx"
 	"github.com/smartwalle/rx/router"
+	"github.com/smartwalle/rx/staticfile"
 )
 
 func main() {
@@ -17,9 +19,11 @@ func main() {
 		c.JSON(http.StatusOK, "r2")
 	})
 
-	r.GET("/r3", func(c *rx.Context) {
+	r.GET("/baidu", func(c *rx.Context) {
 		c.Redirect(http.StatusTemporaryRedirect, "https://www.baidu.com")
 	})
+
+	r.GET("/static/*filepath", staticfile.NewHandler("./"))
 
 	var s = rx.New()
 	s.Use(rx.Logger())
@@ -31,5 +35,7 @@ func main() {
 		c.String(http.StatusNotFound, "访问路由不存在")
 	})
 
-	http.ListenAndServe(":9900", s)
+	if err := http.ListenAndServe(":9900", s); err != nil {
+		log.Fatalln(err)
+	}
 }
