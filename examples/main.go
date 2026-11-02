@@ -26,7 +26,7 @@ func main() {
 	r.GET("/static/*filepath", staticfile.NewHandler("./"))
 
 	var s = rx.New()
-	s.Use(rx.Logger())
+	s.Use(rx.MidLogger())
 	s.UseRouter(r)
 	s.UseErrorEncoder(func(c *rx.Context, err error) {
 		c.String(http.StatusBadRequest, err.Error())
