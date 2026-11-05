@@ -172,7 +172,9 @@ func (c *Context) Render(code int, r Render) {
 		return
 	}
 
-	c.Status(code)
+	if code > 0 {
+		c.Status(code)
+	}
 
 	if !bodyAllowedForStatus(code) {
 		r.WriteContentType(c.Writer)

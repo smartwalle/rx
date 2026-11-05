@@ -2,6 +2,7 @@ package rx
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -16,8 +17,12 @@ type Engine struct {
 	handlers HandlersChain
 	router   Router
 
-	notFound     Route
 	errorEncoder ErrorEncoder
+
+	notFound   Route
+	notAllowed Route
+
+	EnableMethodNotAllowed bool
 }
 
 func New() *Engine {
@@ -26,8 +31,13 @@ func New() *Engine {
 		return &Context{}
 	}
 	engine.router = &noop{}
-	engine.notFound = NewRoute("")
+
 	engine.errorEncoder = defaultErrorEncoder
+
+	engine.notFound = NewRoute("")
+	engine.notAllowed = NewRoute("")
+
+	engine.EnableMethodNotAllowed = false
 	return engine
 }
 
@@ -49,6 +59,12 @@ func (e *Engine) Use(middleware ...HandlerFunc) {
 // 多次调用以最后一次为准。
 func (e *Engine) UseNotFoundHandler(handlers ...HandlerFunc) {
 	e.notFound = NewRoute("", handlers...)
+}
+
+// UseMethodNotAllowedHandler 设置请求方法不允许时使用的处理函数。
+// 当请求路径存在，但请求方法不受支持时，将执行指定的处理函数。
+func (e *Engine) UseMethodNotAllowedHandler(handlers ...HandlerFunc) {
+	e.notAllowed = NewRoute("", handlers...)
 }
 
 // UseErrorEncoder 设置错误编码器。
@@ -88,6 +104,18 @@ func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	e.pool.Put(c)
 }
 
+var methods = []string{
+	http.MethodGet,
+	http.MethodHead,
+	http.MethodPost,
+	http.MethodPut,
+	http.MethodPatch,
+	http.MethodDelete,
+	http.MethodConnect,
+	http.MethodOptions,
+	http.MethodTrace,
+}
+
 func (e *Engine) handleHTTPRequest(c *Context) {
 	route, params, err := e.router.Match(c.Request.Method, c.Request.URL.Path, c.Params[:0])
 	if err != nil {
@@ -95,19 +123,36 @@ func (e *Engine) handleHTTPRequest(c *Context) {
 		return
 	}
 
-	if route == nil {
-		e.serveNotFound(c, e.notFound, http.StatusNotFound, http.StatusText(http.StatusNotFound))
+	if route != nil {
+		c.route = route
+		c.Params = params
+		c.Next()
+		c.writer.WriteHeaderNow()
 		return
 	}
 
-	c.route = route
-	c.Params = params
-	c.Next()
-	c.writer.WriteHeaderNow()
+	if e.EnableMethodNotAllowed {
+		var allowedMethods = make([]string, 0, len(methods)-1)
+		for _, method := range methods {
+			if method == c.Request.Method {
+				continue
+			}
+			if allowedRoute, _, _ := e.router.Match(method, c.Request.URL.Path, params); allowedRoute != nil {
+				allowedMethods = append(allowedMethods, method)
+			}
+		}
+		if len(allowedMethods) > 0 {
+			c.writer.Header().Set("Allow", strings.Join(allowedMethods, ", "))
+			e.handleExceptionCase(c, e.notAllowed, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
+			return
+		}
+	}
+
+	e.handleExceptionCase(c, e.notFound, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
-// serveNotFound 执行兜底处理器；若处理器没有输出任何内容，则输出默认提示。
-func (e *Engine) serveNotFound(c *Context, route Route, code int, message string) {
+// handleExceptionCase 执行兜底处理器；若处理器没有输出任何内容，则输出默认提示。
+func (e *Engine) handleExceptionCase(c *Context, route Route, code int, message string) {
 	c.writer.status = code
 	c.route = route
 	c.index = -1
