@@ -72,7 +72,6 @@ func main() {
 		})
 	})
 
-	// @NO_COMMIT
 	r.POST("/h1", func(c *rx.Context) {
 		fmt.Println("hh")
 	})
