@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -69,6 +70,11 @@ func main() {
 		c.JSON(http.StatusOK, map[string]string{
 			"message": "Hello " + name,
 		})
+	})
+
+	// @NO_COMMIT
+	r.POST("/h1", func(c *rx.Context) {
+		fmt.Println("hh")
 	})
 
 	// 普通路由：读取路径参数。
@@ -142,7 +148,11 @@ func main() {
 	})
 
 	s.UseNotFoundHandler(func(c *rx.Context) {
-		c.String(http.StatusNotFound, "访问路由不存在")
+		c.String(-1, "访问路由不存在")
+	})
+
+	s.UseMethodNotAllowedHandler(func(c *rx.Context) {
+		c.String(-1, "请求方法不支持")
 	})
 
 	if err := http.ListenAndServe(":9900", s); err != nil {
