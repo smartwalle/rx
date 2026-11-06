@@ -22,7 +22,7 @@ type ResponseWriter interface {
 	http.Hijacker
 	http.Flusher
 
-	// Status returns the HTTP response status code of the current request.
+	// StatusCode returns the HTTP response status code of the current request.
 	Status() int
 
 	// Size returns the number of bytes already written into the response http body.
@@ -58,12 +58,12 @@ func (w *responseWriter) reset(writer http.ResponseWriter) {
 	w.status = defaultStatus
 }
 
-func (w *responseWriter) WriteHeader(code int) {
-	if code > 0 && w.status != code {
+func (w *responseWriter) WriteHeader(status int) {
+	if status > 0 && w.status != status {
 		if w.Written() {
 			return
 		}
-		w.status = code
+		w.status = status
 	}
 }
 

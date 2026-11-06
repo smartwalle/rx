@@ -136,59 +136,59 @@ func (c *Context) AbortWithError(err error) {
 		c.encodingError = false
 	}()
 
-	c.Status(http.StatusInternalServerError)
+	c.WriteStatus(http.StatusInternalServerError)
 	c.errorEncoder(c, err)
 	c.Writer.WriteHeaderNow()
 }
 
-func (c *Context) AbortWithStatus(code int) {
+func (c *Context) AbortWithStatus(status int) {
 	c.Abort()
-	c.Status(code)
+	c.WriteStatus(status)
 	c.Writer.WriteHeaderNow()
 }
 
-func (c *Context) AbortWithJSON(code int, obj any) {
+func (c *Context) AbortWithJSON(status int, value any) {
 	c.Abort()
-	c.JSON(code, obj)
+	c.JSON(status, value)
 }
 
-func (c *Context) JSON(code int, obj any) {
-	c.Render(code, jsonRender{data: obj})
+func (c *Context) JSON(status int, value any) {
+	c.Render(status, jsonRender{data: value})
 }
 
-func (c *Context) String(code int, s string) {
-	c.Render(code, textRender{text: s})
+func (c *Context) String(status int, value string) {
+	c.Render(status, textRender{text: value})
 }
 
-func (c *Context) Redirect(code int, location string) {
-	if (code < http.StatusMultipleChoices || code > http.StatusPermanentRedirect) && code != http.StatusCreated {
-		panic(fmt.Sprintf("Cannot redirect with status code %d", code))
+func (c *Context) Redirect(status int, location string) {
+	if (status < http.StatusMultipleChoices || status > http.StatusPermanentRedirect) && status != http.StatusCreated {
+		panic(fmt.Sprintf("Cannot redirect with status code %d", status))
 	}
-	http.Redirect(c.Writer, c.Request, location, code)
+	http.Redirect(c.Writer, c.Request, location, status)
 }
 
-func (c *Context) Render(code int, r Render) {
-	if r == nil {
+func (c *Context) Render(status int, render Render) {
+	if render == nil {
 		return
 	}
 
-	if code > 0 {
-		c.Status(code)
+	if status > 0 {
+		c.WriteStatus(status)
 	}
 
-	if !bodyAllowedForStatus(code) {
-		r.WriteContentType(c.Writer)
+	if !bodyAllowedForStatus(status) {
+		render.WriteContentType(c.Writer)
 		c.Writer.WriteHeaderNow()
 		return
 	}
 
-	if err := r.Render(c.Writer); err != nil {
+	if err := render.Render(c.Writer); err != nil {
 		c.AbortWithError(err)
 	}
 }
 
-func (c *Context) Status(code int) {
-	c.Writer.WriteHeader(code)
+func (c *Context) WriteStatus(status int) {
+	c.Writer.WriteHeader(status)
 }
 
 func (c *Context) Set(key string, value any) {
