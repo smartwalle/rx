@@ -152,8 +152,8 @@ func (e *Engine) handleHTTPRequest(c *Context) {
 }
 
 // handleExceptionCase 执行兜底处理器；若处理器没有输出任何内容，则输出默认提示。
-func (e *Engine) handleExceptionCase(c *Context, route Route, code int, message string) {
-	c.writer.status = code
+func (e *Engine) handleExceptionCase(c *Context, route Route, status int, message string) {
+	c.writer.status = status
 	c.route = route
 	c.index = -1
 	c.Next()
@@ -162,7 +162,7 @@ func (e *Engine) handleExceptionCase(c *Context, route Route, code int, message 
 		return
 	}
 
-	if c.writer.Status() == code {
+	if c.writer.Status() == status {
 		c.Writer.WriteString(message)
 		return
 	}
